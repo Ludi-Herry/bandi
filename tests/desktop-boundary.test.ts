@@ -1006,7 +1006,7 @@ test("Windows desktop update flow keeps package identity and renderer privileges
   assert.equal(pkg.build?.portable?.artifactName, "Bandi-${version}-${arch}-portable.${ext}");
   assert.deepEqual(pkg.build?.publish?.[0], {
     provider: "github",
-    owner: "Luis-Herry",
+    owner: "Ludi-Herry",
     repo: "bandi",
     channel: "latest",
     releaseType: "draft",

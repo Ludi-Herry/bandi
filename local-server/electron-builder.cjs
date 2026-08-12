@@ -78,7 +78,7 @@ module.exports = {
   publish: [
     {
       provider: "github",
-      owner: "Luis-Herry",
+      owner: "Ludi-Herry",
       repo: "bandi",
       channel: `latest-${arch}`,
       releaseType: "draft",

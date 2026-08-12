@@ -66,7 +66,7 @@ npm run desktop:dist
 
 ### Apple 设备社区真机验证
 
-macOS Local Web 的 Intel x64、Apple Silicon ARM64，以及 iOS/iPadOS Safari 仍待社区真机验证。请先按 [社区真机验证清单](docs/desktop/macos-community-verification.md) 完整执行，再使用 [专用 Issue Form](https://github.com/Luis-Herry/bandi/issues/new?template=macos-community-verification.yml) 回传结果。
+macOS Local Web 的 Intel x64、Apple Silicon ARM64，以及 iOS/iPadOS Safari 仍待社区真机验证。请先按 [社区真机验证清单](docs/desktop/macos-community-verification.md) 完整执行，再使用 [专用 Issue Form](https://github.com/Ludi-Herry/bandi/issues/new?template=macos-community-verification.yml) 回传结果。
 
 公开 Issue 只保留失败所需的最短证据。提交前移除本地绝对路径、用户名、媒体名称、观看记录、成人内容记录、magnet、RSS、下载任务、令牌、Cookie、密码、API Key 与 qBittorrent 凭据；禁止上传数据库、配置文件或应用数据目录。
 

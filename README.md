@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Luis-Herry/bandi/releases">下载桌面版</a>
+  <a href="https://github.com/Ludi-Herry/bandi/releases">下载桌面版</a>
   ·
   <a href="#第一次启动">第一次启动</a>
   ·
@@ -137,7 +137,7 @@
 
 ### 选择分发包
 
-当前公开版本是 [`v0.1.12`](https://github.com/Luis-Herry/bandi/releases/tag/v0.1.12)：
+当前公开版本是 [`v0.1.12`](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12)：
 
 | 文件 | 适合谁 | 使用方式 |
 |---|---|---|
@@ -148,13 +148,13 @@
 
 当前安装包尚未进行 Authenticode 代码签名，Windows SmartScreen 可能显示未知发布者。请只从本仓库 Releases 下载，并对照 Release 中公布的 SHA-256 校验值。
 
-当前 macOS 附件也没有 Developer ID 签名与 Apple 公证，只提供同架构 DMG 手动安装，并明确标记为等待社区真机验收。Intel x64、Apple Silicon ARM64、iPhone 与 iPad 仍需分别确认启动、下载、播放、局域网配对与 Gatekeeper 行为。验证步骤见 [社区真机验证清单](docs/desktop/macos-community-verification.md)，完成后请通过 [GitHub Issue Form](https://github.com/Luis-Herry/bandi/issues/new?template=macos-community-verification.yml) 回传脱敏结果。
+当前 macOS 附件也没有 Developer ID 签名与 Apple 公证，只提供同架构 DMG 手动安装，并明确标记为等待社区真机验收。Intel x64、Apple Silicon ARM64、iPhone 与 iPad 仍需分别确认启动、下载、播放、局域网配对与 Gatekeeper 行为。验证步骤见 [社区真机验证清单](docs/desktop/macos-community-verification.md)，完成后请通过 [GitHub Issue Form](https://github.com/Ludi-Herry/bandi/issues/new?template=macos-community-verification.yml) 回传脱敏结果。
 
 ### 版本更新
 
 所有版本先生成 Draft Release。GitHub Actions 负责构建和校验平台附件；Draft 只供维护者核对架构、文件大小、SHA-256 与更新清单，客户端看不到，人工验收通过后才单独公开。
 
-`v0.1.11 → v0.1.12` 的 Setup N-1 runner 保持旧版进程与 parent lease 健康、配置未改动，但受信任页面始终没有就绪，因此本版自动 Setup 更新仍未完成验证。portable 已完成新版下载与校验、三页全局提示、60 秒就绪保持和旧进程退出，随后没有生成新版 lease、目标进程或 helper 结果，自动启动链路失败。若应用内更新没有完成，请从 [`v0.1.12` Release](https://github.com/Luis-Herry/bandi/releases/tag/v0.1.12) 手动运行对应的 Setup 或 `Bandi-0.1.12-x64-portable.exe`。
+`v0.1.11 → v0.1.12` 的 Setup N-1 runner 保持旧版进程与 parent lease 健康、配置未改动，但受信任页面始终没有就绪，因此本版自动 Setup 更新仍未完成验证。portable 已完成新版下载与校验、三页全局提示、60 秒就绪保持和旧进程退出，随后没有生成新版 lease、目标进程或 helper 结果，自动启动链路失败。若应用内更新没有完成，请从 [`v0.1.12` Release](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12) 手动运行对应的 Setup 或 `Bandi-0.1.12-x64-portable.exe`。
 
 | 当前入口 | 发现新版后的体验 |
 |---|---|
@@ -281,7 +281,7 @@ iPhone 与 iPad 只读取 Mac 通过当前局域网提供的页面和视频流�
 
 ### 如何更新 Bandi？
 
-Windows Setup 与 portable 会在后台检查公开 Release。下载完成后，所有页面右下角都会出现对应更新按钮，不必进入设置中心。若应用内更新没有完成，请从 [`v0.1.12` Release](https://github.com/Luis-Herry/bandi/releases/tag/v0.1.12) 手动运行对应的 Setup 或 `Bandi-0.1.12-x64-portable.exe`。macOS 当前点击“下载新版”进入 Release 手动安装；iPhone 与 iPad 跟随 Mac 宿主版本，宿主更新后刷新 Safari 页面即可。Draft Release 不会触发客户端更新。
+Windows Setup 与 portable 会在后台检查公开 Release。下载完成后，所有页面右下角都会出现对应更新按钮，不必进入设置中心。若应用内更新没有完成，请从 [`v0.1.12` Release](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12) 手动运行对应的 Setup 或 `Bandi-0.1.12-x64-portable.exe`。macOS 当前点击“下载新版”进入 Release 手动安装；iPhone 与 iPad 跟随 Mac 宿主版本，宿主更新后刷新 Safari 页面即可。Draft Release 不会触发客户端更新。
 
 ### 所有视频都能在内置播放器播放吗？
 
@@ -326,7 +326,7 @@ npm run dev
 - 仅开发资料页时可以不启动 qBittorrent；下载链路验收应使用仓库内置版本。
 
 ```bash
-git clone https://github.com/Luis-Herry/bandi.git
+git clone https://github.com/Ludi-Herry/bandi.git
 cd bandi
 npm install
 npm run dev

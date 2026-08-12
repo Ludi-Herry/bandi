@@ -502,7 +502,7 @@ function initializeUpdateController() {
     updater: autoUpdater,
     fetchImpl: (input, init) => electronNet.fetch(input, init),
     openExternal: () => shell.openExternal(
-      "https://github.com/Luis-Herry/bandi/releases/latest",
+      "https://github.com/Ludi-Herry/bandi/releases/latest",
     ),
     beforeInstall: async () => {
       isQuitting = true;

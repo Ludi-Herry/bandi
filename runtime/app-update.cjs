@@ -5,7 +5,7 @@ const { Readable, Transform } = require("node:stream");
 const { pipeline } = require("node:stream/promises");
 const { name: PACKAGE_NAME } = require("../package.json");
 
-const GITHUB_OWNER = "Luis-Herry";
+const GITHUB_OWNER = "Ludi-Herry";
 const GITHUB_REPO = "bandi";
 const GITHUB_API_LATEST =
   `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;

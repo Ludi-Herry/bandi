@@ -4,9 +4,9 @@ This is the canonical Bandi repository for the Windows Electron product and macO
 
 ## Repository And Release
 
-- Repository: https://github.com/Luis-Herry/bandi
+- Repository: https://github.com/Ludi-Herry/bandi
 - Visibility: public
-- Latest GitHub release: https://github.com/Luis-Herry/bandi/releases/tag/v0.1.12
+- Latest GitHub release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12
 - Latest release title: `Bandi v0.1.12`
 - Latest release source commit: `55d60e8177a8cb7239853de27ebda672b32f5d87`
 - Release candidate version: none
@@ -173,7 +173,7 @@ GitHub 公共标准 runner 固定为 `windows-2025`、Intel `macos-15-intel` 与
 ### v0.1.12 Release Record
 
 - Published: `2026-07-19`
-- Release: https://github.com/Luis-Herry/bandi/releases/tag/v0.1.12
+- Release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12
 - Source commit: `55d60e8177a8cb7239853de27ebda672b32f5d87`
 - Draft workflow: `29682870385`；源码门禁、Windows x64、macOS x64、macOS arm64 与 Draft 聚合 5 个作业全部通过，13 个附件上传完成；公开后 Release ID `356312394`、latest、tag API、GitHub asset digest、`SHA256SUMS.txt` 与三套更新元数据反查一致
 - Tests: `481` total，`480` passed，`1` platform-expected skip；TypeScript、Next production build、本地 Windows `desktop:dist`、包内容审计和免安装 packaged-app smoke 通过；桌面快捷方式启动 `0.1.12` 后从下载管理真实打开配置目录
@@ -186,7 +186,7 @@ GitHub 公共标准 runner 固定为 `windows-2025`、Intel `macos-15-intel` 与
 ### v0.1.11 Release Record
 
 - Published: `2026-07-19`
-- Release: https://github.com/Luis-Herry/bandi/releases/tag/v0.1.11
+- Release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.11
 - Source commit: `7ed3dc701e70c19b4d9dc5709d71a48e2284fcb4`
 - Draft workflow: `29677812838`；第一次 Apple Silicon 构建在 Next.js page data 阶段遇到一次 `SQLITE_BUSY`，只重跑失败 lane 后三平台构建、13 个附件上传和 Draft 组装全部通过；公开后远端摘要与 `SHA256SUMS.txt` 反查为 `0` 个差异
 - Tests: `477` total，`476` passed，`1` platform-expected skip；TypeScript、Next production build、本地 Windows `desktop:dist`、包内容审计与 packaged-app smoke 通过
@@ -198,7 +198,7 @@ GitHub 公共标准 runner 固定为 `windows-2025`、Intel `macos-15-intel` 与
 ### v0.1.10 Release Record
 
 - Published: `2026-07-16`
-- Release: https://github.com/Luis-Herry/bandi/releases/tag/v0.1.10
+- Release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.10
 - Source commit: `239104da559037810ff2c964719f782e9ed71aa1`
 - Draft workflow: `29518757017`；Windows、macOS x64 与 macOS arm64 原生构建、13 个附件上传及远端摘要反查通过
 - Tests: `471` total，`470` passed，`1` platform-expected skip；TypeScript、Next production build、standalone preparation 与本地 Windows `desktop:dist` 通过
@@ -210,7 +210,7 @@ GitHub 公共标准 runner 固定为 `windows-2025`、Intel `macos-15-intel` 与
 ### v0.1.8 Release Record
 
 - Published: `2026-07-16`
-- Release: https://github.com/Luis-Herry/bandi/releases/tag/v0.1.8
+- Release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.8
 - Source commit: `9d2f2a8c881f9d3d5d65ae940b82cbd8f62fb773`
 - Draft workflow: `29505453375`；Windows、macOS x64 与 macOS arm64 原生构建、13 个附件上传及远端摘要反查通过
 - Tests: `471` total，`470` passed，`1` platform-expected skip；TypeScript、Next production build、standalone preparation 与本地 Windows `desktop:dist` 通过
@@ -222,7 +222,7 @@ GitHub 公共标准 runner 固定为 `windows-2025`、Intel `macos-15-intel` 与
 ### v0.1.7 Release Record
 
 - Published: `2026-07-16`
-- Release: https://github.com/Luis-Herry/bandi/releases/tag/v0.1.7
+- Release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.7
 - Source commit: `b79395c4ccaa26b7cabd077234d008847125b291`
 - Draft workflow: `29491609424`；Windows、macOS x64 与 macOS arm64 原生构建、13 个附件上传及远端摘要反查通过
 - Tests: `471` total，`470` passed，`1` platform-expected skip；TypeScript、Next production build 与 standalone preparation 通过
@@ -233,7 +233,7 @@ GitHub 公共标准 runner 固定为 `windows-2025`、Intel `macos-15-intel` 与
 ### v0.1.6 Release Record
 
 - Published: `2026-07-16`
-- Release: https://github.com/Luis-Herry/bandi/releases/tag/v0.1.6
+- Release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.6
 - Source commit: `375c3087ffb6075bf1c41000969fbe4e8f1305dd`
 - Public assets: `13`，包含 Windows Setup、portable、两套 macOS DMG/ZIP、更新清单、blockmap 与 `SHA256SUMS.txt`
 - Tests: `467` total，`466` passed，`1` platform-expected skip；TypeScript、Next production build、Windows packaging 与 packaged-app smoke 通过

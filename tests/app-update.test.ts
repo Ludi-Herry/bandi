@@ -97,7 +97,7 @@ test("compareVersions follows semver precedence", () => {
 
 test("portable asset selection requires one exact trusted ASCII asset", () => {
   const expected = "Bandi-0.1.6-x64-portable.exe";
-  const trustedUrl = `https://github.com/Luis-Herry/bandi/releases/download/v0.1.6/${expected}`;
+  const trustedUrl = `https://github.com/Ludi-Herry/bandi/releases/download/v0.1.6/${expected}`;
   const release = {
     assets: [
       { name: `追番中心-0.1.6-x64-portable.exe`, browser_download_url: trustedUrl },
@@ -116,7 +116,7 @@ test("portable asset selection requires one exact trusted ASCII asset", () => {
     null,
   );
   assert.equal(isTrustedReleaseAssetUrl(trustedUrl), true);
-  assert.equal(isTrustedReleaseAssetUrl("http://github.com/Luis-Herry/bandi/releases/download/x/y"), false);
+  assert.equal(isTrustedReleaseAssetUrl("http://github.com/Ludi-Herry/bandi/releases/download/x/y"), false);
 });
 
 test("GitHub and release-note digest parsing is strict", () => {
@@ -136,7 +136,7 @@ test("portable controller downloads exact asset, verifies integrity, and returns
     const bytes = Buffer.from("verified portable update");
     const digest = crypto.createHash("sha256").update(bytes).digest("hex");
     const assetName = "Bandi-0.1.6-x64-portable.exe";
-    const assetUrl = `https://github.com/Luis-Herry/bandi/releases/download/v0.1.6/${assetName}`;
+    const assetUrl = `https://github.com/Ludi-Herry/bandi/releases/download/v0.1.6/${assetName}`;
     const requested: string[] = [];
     const controller = createAppUpdateController({
       currentVersion: "0.1.5",
@@ -206,7 +206,7 @@ test("portable controller rejects a checksum mismatch and never exposes a launch
   try {
     const bytes = Buffer.from("tampered");
     const assetName = "Bandi-0.1.6-x64-portable.exe";
-    const assetUrl = `https://github.com/Luis-Herry/bandi/releases/download/v0.1.6/${assetName}`;
+    const assetUrl = `https://github.com/Ludi-Herry/bandi/releases/download/v0.1.6/${assetName}`;
     const controller = createAppUpdateController({
       currentVersion: "0.1.5",
       platform: "win32",

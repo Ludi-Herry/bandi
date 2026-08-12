@@ -179,7 +179,7 @@ grep -RniE 'token=|BANDI_CONTROL_TOKEN|qbitPassword|authSecret' "$HOME/Library/A
 
 ## 10. 提交 GitHub Issue
 
-完成清单后，通过 [macOS / iOS 社区真机验证 Issue Form](https://github.com/Luis-Herry/bandi/issues/new?template=macos-community-verification.yml) 提交结果。Intel x64、Apple Silicon ARM64、iPhone 和 iPad 可以分别提交，失败项优先回传，便于维护者按设备与系统版本定位。
+完成清单后，通过 [macOS / iOS 社区真机验证 Issue Form](https://github.com/Ludi-Herry/bandi/issues/new?template=macos-community-verification.yml) 提交结果。Intel x64、Apple Silicon ARM64、iPhone 和 iPad 可以分别提交，失败项优先回传，便于维护者按设备与系统版本定位。
 
 提交前必须再次检查公开内容，移除或替换以下信息：
 

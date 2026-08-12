@@ -417,9 +417,9 @@ test("public packages exclude FFmpeg while local-only builds stay gated", () => 
   assert.equal(pkg.build.appId, "cn.luis.anime-tracker.desktop");
   assert.equal(pkg.dependencies["ffmpeg-static"], undefined);
   assert.equal(pkg.devDependencies["ffmpeg-static"], "5.3.0");
-  assert.match(pkg.homepage, /Luis-Herry\/bandi/);
-  assert.match(pkg.repository.url, /Luis-Herry\/bandi/);
-  assert.match(pkg.bugs.url, /Luis-Herry\/bandi/);
+  assert.match(pkg.homepage, /Ludi-Herry\/bandi/);
+  assert.match(pkg.repository.url, /Ludi-Herry\/bandi/);
+  assert.match(pkg.bugs.url, /Ludi-Herry\/bandi/);
   assert.equal(
     pkg.build.extraResources.some((item) => /ffmpeg/i.test(item.from + item.to)),
     false,

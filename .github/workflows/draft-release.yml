@@ -44,8 +44,8 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REPOSITORY" != "Luis-Herry/bandi" ]]; then
-            echo "This workflow only releases Luis-Herry/bandi." >&2
+          if [[ "$GITHUB_REPOSITORY" != "Ludi-Herry/bandi" ]]; then
+            echo "This workflow only releases Ludi-Herry/bandi." >&2
             exit 1
           fi
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then

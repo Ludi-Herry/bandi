@@ -2,17 +2,17 @@
   "name": "anime-tracker",
   "version": "0.1.12",
   "description": "Windows local-first anime tracker, downloader, and personal media center.",
-  "author": "Luis-Herry",
+  "author": "Ludi-Herry",
   "license": "GPL-3.0-only",
   "private": true,
   "main": "desktop/main.cjs",
-  "homepage": "https://github.com/Luis-Herry/bandi#readme",
+  "homepage": "https://github.com/Ludi-Herry/bandi#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Luis-Herry/bandi.git"
+    "url": "git+https://github.com/Ludi-Herry/bandi.git"
   },
   "bugs": {
-    "url": "https://github.com/Luis-Herry/bandi/issues"
+    "url": "https://github.com/Ludi-Herry/bandi/issues"
   },
   "keywords": [
     "anime",
@@ -129,7 +129,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "Luis-Herry",
+        "owner": "Ludi-Herry",
         "repo": "bandi",
         "channel": "latest",
         "releaseType": "draft"

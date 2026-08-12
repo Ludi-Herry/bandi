@@ -20,7 +20,7 @@ if ($env:GITHUB_ACTIONS -ne "true" -or [string]::IsNullOrWhiteSpace($env:RUNNER_
   throw "Windows N-1 acceptance must run on an ephemeral GitHub Actions runner"
 }
 
-$repository = "Luis-Herry/bandi"
+$repository = "Ludi-Herry/bandi"
 $baseVersion = $BaseTag.Substring(1)
 $targetVersion = $TargetTag.Substring(1)
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
