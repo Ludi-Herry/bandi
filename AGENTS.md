@@ -277,8 +277,8 @@ npm run db:seed  # 填充测试数据
 **Next.js 构建**
 - **禁止** `npm run build` 和 `npm start` 同时跑——会让 `.next` 出现 "Could not find a production build" 残缺，需要重 build
 - Windows 后台 `npm start` wrapper 退出（exit 127）但底层 next 子进程通常仍在监听，看端口为准
-- Node 24 默认 `fetch` 不读取 `HTTP_PROXY` / `HTTPS_PROXY`；本项目的 `npm run dev` 和 `npm start` 必须保留 `node --use-env-proxy node_modules/next/dist/bin/next ...`。如果 `curl https://api.bgm.tv` 走 `127.0.0.1:10808` 能通，但应用里 Bangumi 超时，优先检查启动脚本是否丢了 `--use-env-proxy`。
-- Electron 启动 Next 时会沿用已有代理；父进程没有代理且 `127.0.0.1:10808` 可连接时启用本机 fallback。两条路径都必须把 `127.0.0.1,localhost,::1` 合并进 `NO_PROXY`，避免本地 Next/qBit 流量进入代理。
+- Node 24 默认 `fetch` 不读取 `HTTP_PROXY` / `HTTPS_PROXY`；本项目的 `npm run dev` 和 `npm start` 必须保留 `node --use-env-proxy node_modules/next/dist/bin/next ...`。如果 `curl https://api.bgm.tv` 经本机代理能通，但应用里 Bangumi 超时，优先检查启动脚本是否丢了 `--use-env-proxy`。
+- Electron 启动 Next 时会沿用已有代理；父进程没有代理且常见本机代理端口可连接时启用本机 fallback。两条路径都必须把 `127.0.0.1,localhost,::1` 合并进 `NO_PROXY`，避免本地 Next/qBit 流量进入代理。
 - 静默会话请求头只允许当前随机 Next 端口的 `http://127.0.0.1:<port>` 与 `http://localhost:<port>`；重定向可能在两种主机名间切换。禁止放宽到任意 localhost 端口、HTTPS、相似域名，也不要记录令牌值。
 - 2026-05-28 本机确认 Windows TCP excluded range 含 `8064-8163`，`8080` 在其中；桌面主进程现已自动避开被占用或被系统保留的端口，用户无需编辑 `qbitPort`。
 
@@ -289,4 +289,4 @@ npm run db:seed  # 填充测试数据
 - 番剧库季度目录只等待国内可直连的长门番堂；长门更新失败时显示缓存或本地 fallback，fallback 会从 `anime.year` 和 `tags` 里的 `2026年4月` 这类年月标签推断季度。Bangumi 继续用于详情、人物、制作、关联、评分与评论等专属信息，不阻塞季度目录。
 - Bangumi 简介可能只有日文；手动资料刷新用豆瓣严格匹配做简体中文兜底。长门不提供剧情简介，不能把其 Atom 摘要写入 `anime.synopsis`。
 - AniList 数据中文化方案：用日文名去 Bangumi 交叉匹配
-- RSS 源建议：保留 `https://api.animes.garden/feed.xml`，避免 `dmhy.org/topics/rss/rss.xml`（上游 `<enclosure length="1">` 字段错填，size 显示成 1.0 B；两个源内容大量重叠）
+- RSS 源保留一个全量主源即可；避免与主源内容大量重叠的镜像源（部分上游存在 `<enclosure length="1">` 字段错填，size 会显示成 1.0 B）
