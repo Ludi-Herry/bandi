@@ -31,7 +31,7 @@ This is the canonical Bandi repository for the Windows Electron product and macO
 
 Runtime paths are resolved through Electron's Windows known-folder APIs. The selected download directory is validated as a writable drive-qualified or UNC child directory before use.
 
-The YUC cache stores normalized 长门番堂 facts and HTTP validators only. It keeps the last valid snapshot for temporary upstream failures and never persists raw page HTML.
+The YUC cache stores normalized 长门番堂 facts and HTTP validators only. It keeps the last valid snapshot for temporary upstream failures and never persists raw page HTML. A user-forced refresh waits for the real upstream result. Quarter aggregation reads the related YUC pages sequentially, while Bangumi season pagination uses a concurrency limit of three and an eight-second page timeout.
 
 ## Desktop Session
 
@@ -273,6 +273,7 @@ Safe download behavior is enabled at the application layer:
 - `buildSafeTorrentOptions({ category: "anime" })` applies a `128 KiB/s` upload cap and qBit sharing limits.
 - Downloads that newly cross into `completed` are paused through qBit after the local episode flag is updated.
 - Local list deletion and bulk deletion never delete qBittorrent tasks or downloaded files.
+- Download reconciliation removes local queue rows whose live managed-qBit state is `missingFiles`, records source dismissals before deletion, and repairs episode download flags. The qBittorrent task and filesystem remain untouched.
 
 ## Bundled Node Runtime
 
@@ -321,7 +322,7 @@ Completed `downloadQueue` rows are the playback identity. When duplicate `episod
 
 Season browse status, `/api/browse/add`, and metadata refresh share the same YUC/Bangumi identity resolver. Existing local identity wins, followed by a resolved Bangumi subject and then a YUC-only fallback. Relaxed title-family matches such as numeric season labels or arc suffixes require an exact premiere date, or matching quarter plus main episode count; ambiguous candidates fail closed.
 
-The browse quarter action refreshes Bangumi and YUC caches first, then runs metadata refresh for local anime rows in the selected quarter. Douban synopsis fallback stays sequential in this bulk path because burst requests to the suggestion endpoint can silently omit valid titles. Single-anime, local-library, and download scopes keep bounded concurrency.
+The browse quarter action refreshes Bangumi and YUC caches first, then runs metadata refresh for local anime rows in the selected quarter. A forced YUC refresh waits for the current request and serializes the quarter, future, special, and movie page reads; Bangumi season pagination is capped at three concurrent pages. Douban synopsis fallback stays sequential in this bulk path because burst requests to the suggestion endpoint can silently omit valid titles. Single-anime, local-library, and download scopes keep bounded concurrency.
 
 ## Douban Catalog Classification
 

@@ -7,6 +7,7 @@ const DEFAULT_TIMEOUT_MS = 2_000;
 const DEFAULT_MAX_BYTES = 4 * 1024 * 1024;
 const DEFAULT_FAILURE_RETRY_MS = 30 * 60 * 1000;
 const DEFAULT_STALE_REFRESH_WAIT_MS = 100;
+const RETRY_DELAY_MS = 200;
 const ALLOWED_CONTENT_TYPES = [
   "text/html",
   "application/xml",
@@ -123,6 +124,12 @@ export function createYucCache(options: YucCacheOptions = {}) {
       | Promise<YucCachedPage<T>>
       | undefined;
     if (existingInflight) {
+      if (request.forceRefresh) {
+        return waitForPromiseWithinDeadline(
+          existingInflight,
+          request.deadlineAt,
+        );
+      }
       return fallback
         ? waitForRefreshOrStale(
             existingInflight,
@@ -146,6 +153,9 @@ export function createYucCache(options: YucCacheOptions = {}) {
         inflight.delete(operationKey);
       });
     inflight.set(operationKey, promise as Promise<YucCachedPage<unknown>>);
+    if (request.forceRefresh) {
+      return waitForPromiseWithinDeadline(promise, request.deadlineAt);
+    }
     return fallback
       ? waitForRefreshOrStale(promise, fallback, request.deadlineAt)
       : waitForPromiseWithinDeadline(promise, request.deadlineAt);
@@ -302,13 +312,20 @@ export function createYucCache(options: YucCacheOptions = {}) {
           redirect: "error",
           signal: AbortSignal.timeout(timeoutMs),
         });
-        if ((response.status === 429 || response.status >= 500) && attempt === 0) {
+        if (
+          (response.status === 429 || response.status >= 500) &&
+          attempt === 0
+        ) {
+          await delay(RETRY_DELAY_MS);
           continue;
         }
         return response;
       } catch (error) {
         lastError = error;
-        if (attempt === 0) continue;
+        if (attempt === 0) {
+          await delay(RETRY_DELAY_MS);
+          continue;
+        }
       }
     }
     throw new YucUnavailableError("长门番堂请求失败", { cause: lastError });
@@ -356,6 +373,10 @@ export function createYucCache(options: YucCacheOptions = {}) {
   }
 
   return { get };
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function countParsedItems<T>(

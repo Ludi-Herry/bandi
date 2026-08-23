@@ -19,6 +19,8 @@ const UA =
 
 const DEFAULT_FETCH_TIMEOUT_MS = 15_000;
 const DEFAULT_FETCH_ATTEMPTS = 2;
+const SEASON_PAGE_TIMEOUT_MS = 8_000;
+const SEASON_PAGE_CONCURRENCY = 3;
 
 interface BgmFetchOptions extends RequestInit {
   throwOnUnavailable?: boolean;
@@ -42,6 +44,32 @@ export function isBangumiUnavailableError(
 
 function retryDelay(attempt: number): number {
   return 800 + attempt * 700 + Math.random() * 350;
+}
+
+/** Keep paginated upstream reads bounded while preserving result order. */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) return [];
+  const workerCount = Math.min(
+    items.length,
+    Math.max(1, Math.floor(concurrency)),
+  );
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+
+  async function runWorker() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+  return results;
 }
 
 export interface BgmImages {
@@ -433,7 +461,7 @@ async function fetchSeasonSubjects(
     method: "POST",
     body,
     throwOnUnavailable: true,
-    timeoutMs: 4_000,
+    timeoutMs: SEASON_PAGE_TIMEOUT_MS,
     maxAttempts: 2,
   });
   if (!first?.data || first.data.length === 0) return [];
@@ -447,19 +475,20 @@ async function fetchSeasonSubjects(
     offsets.push(off);
   }
   if (offsets.length > 0) {
-    const pages = await Promise.all(
-      offsets.map((off) =>
+    const pages = await mapWithConcurrency(
+      offsets,
+      SEASON_PAGE_CONCURRENCY,
+      (off) =>
         bgmFetch<{ data?: BgmSubject[] }>(
           `/v0/search/subjects?limit=${pageSize}&offset=${off}`,
           {
             method: "POST",
             body,
             throwOnUnavailable: true,
-            timeoutMs: 4_000,
+            timeoutMs: SEASON_PAGE_TIMEOUT_MS,
             maxAttempts: 2,
           },
         ),
-      ),
     );
     for (const p of pages) {
       if (p?.data) all.push(...p.data);

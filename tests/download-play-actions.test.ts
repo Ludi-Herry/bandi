@@ -285,7 +285,11 @@ test("downloads refresh prunes completed rows whose backing source disappeared",
   );
 
   assert.match(downloadsRouteSource, /getStatus\(\)/);
-  assert.match(downloadsRouteSource, /qbitConnected: qbitStatus\.connected/);
+  assert.match(downloadsRouteSource, /qbitSnapshotAvailable = true/);
+  assert.match(
+    downloadsRouteSource,
+    /qbitConnected: qbitSnapshotAvailable/,
+  );
   assert.match(downloadsRouteSource, /parseLocalFileDownloadUrl\(row\.magnetUrl\)/);
   assert.match(downloadsRouteSource, /!existsSync\(localPath\)/);
   assert.match(downloadsRouteSource, /!isVideoFileName\(path\.basename\(localPath\)\)/);

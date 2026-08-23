@@ -16,6 +16,7 @@ import {
 } from "@/lib/download-reconcile";
 import {
   clearDownloadSourceDismissal,
+  dismissDownloadSources,
   listDismissedDownloadSourceKeys,
 } from "@/lib/download-dismissals";
 import { findDownloadDuplicate } from "@/lib/download-dedupe";
@@ -53,12 +54,19 @@ export async function GET() {
     connected: false,
     url: "",
   }));
-  const live = qbitStatus.connected
-    ? await listTorrents().catch(() => [])
-    : [];
+  let live: QbitTorrent[] = [];
+  let qbitSnapshotAvailable = false;
+  if (qbitStatus.connected) {
+    try {
+      live = await listTorrents();
+      qbitSnapshotAvailable = true;
+    } catch {
+      live = [];
+    }
+  }
   syncMissingDownloadSources({
     live,
-    qbitConnected: qbitStatus.connected,
+    qbitConnected: qbitSnapshotAvailable,
   });
   syncExternalDownloads(
     live,
@@ -194,6 +202,11 @@ function syncMissingDownloadSources({
   const liveHashes = new Set(
     live.map((torrent) => torrent.hash.trim().toLowerCase()).filter(Boolean),
   );
+  const liveByHash = new Map(
+    live
+      .map((torrent) => [torrent.hash.trim().toLowerCase(), torrent] as const)
+      .filter(([hash]) => Boolean(hash)),
+  );
   const rows = db
     .select({
       id: downloadQueue.id,
@@ -206,7 +219,17 @@ function syncMissingDownloadSources({
 
   const staleIds: number[] = [];
   const episodeIds: Array<number | null> = [];
+  const dismissedMagnetUrls: string[] = [];
   for (const row of rows) {
+    const hash = extractMagnetHash(row.magnetUrl);
+    const liveTorrent = hash ? liveByHash.get(hash) : undefined;
+    if (qbitConnected && liveTorrent?.state === "missingFiles") {
+      staleIds.push(row.id);
+      episodeIds.push(row.episodeId);
+      dismissedMagnetUrls.push(row.magnetUrl);
+      continue;
+    }
+
     if (row.status !== "completed") continue;
 
     const localPath = parseLocalFileDownloadUrl(row.magnetUrl);
@@ -218,7 +241,6 @@ function syncMissingDownloadSources({
       continue;
     }
 
-    const hash = extractMagnetHash(row.magnetUrl);
     if (qbitConnected && hash && !liveHashes.has(hash)) {
       staleIds.push(row.id);
       episodeIds.push(row.episodeId);
@@ -227,6 +249,7 @@ function syncMissingDownloadSources({
 
   if (staleIds.length === 0) return;
 
+  dismissDownloadSources(dismissedMagnetUrls);
   db.delete(downloadQueue).where(inArray(downloadQueue.id, staleIds)).run();
   resetDownloadedFlagsWithoutCompletedRows(episodeIds);
 }

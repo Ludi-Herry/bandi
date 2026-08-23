@@ -28,7 +28,7 @@ const YUC_FUTURE_URL = "https://yuc.wiki/new/";
 const YUC_SPECIAL_URL = "https://yuc.wiki/sp/";
 const YUC_MOVIE_URL = "https://yuc.wiki/movie/";
 const ATOM_SIGNAL_BUDGET_MS = 250;
-const QUARTER_SOURCE_BUDGET_MS = 3_800;
+const QUARTER_SOURCE_BUDGET_MS = 8_000;
 
 const MONTH_BY_SEASON: Record<BgmSeason, number> = {
   WINTER: 1,
@@ -241,36 +241,45 @@ export async function getYucEntriesForQuarter(
   forceRefresh = false,
 ): Promise<YucCatalogResult> {
   const month = MONTH_BY_SEASON[season];
-  const deadlineAt = Date.now() + QUARTER_SOURCE_BUDGET_MS;
-  const atomPage = await settleWithin(
-    getYucAtomPage(forceRefresh),
-    ATOM_SIGNAL_BUDGET_MS,
-    null,
-  );
-  const [seasonPage, futurePage, specialPage, moviePage] = await Promise.all([
-    getYucSeasonPage(
-      year,
-      month,
-      atomPageUpdatedAt(atomPage, seasonUrl(year, month)),
-      deadlineAt,
-      forceRefresh,
-    ),
-    getYucFuturePage(
-      atomPageUpdatedAt(atomPage, YUC_FUTURE_URL),
-      deadlineAt,
-      forceRefresh,
-    ),
-    getYucSpecialPage(
-      atomPageUpdatedAt(atomPage, YUC_SPECIAL_URL),
-      deadlineAt,
-      forceRefresh,
-    ),
-    getYucMoviePage(
-      atomPageUpdatedAt(atomPage, YUC_MOVIE_URL),
-      deadlineAt,
-      forceRefresh,
-    ),
-  ]);
+  const deadlineAt = forceRefresh
+    ? undefined
+    : Date.now() + QUARTER_SOURCE_BUDGET_MS;
+  const atomPage = forceRefresh
+    ? await getYucAtomPage(true)
+    : await settleWithin(
+        getYucAtomPage(false),
+        ATOM_SIGNAL_BUDGET_MS,
+        null,
+      );
+  const [seasonPage, futurePage, specialPage, moviePage] =
+    await runSequentially([
+      () =>
+        getYucSeasonPage(
+          year,
+          month,
+          atomPageUpdatedAt(atomPage, seasonUrl(year, month)),
+          deadlineAt,
+          forceRefresh,
+        ),
+      () =>
+        getYucFuturePage(
+          atomPageUpdatedAt(atomPage, YUC_FUTURE_URL),
+          deadlineAt,
+          forceRefresh,
+        ),
+      () =>
+        getYucSpecialPage(
+          atomPageUpdatedAt(atomPage, YUC_SPECIAL_URL),
+          deadlineAt,
+          forceRefresh,
+        ),
+      () =>
+        getYucMoviePage(
+          atomPageUpdatedAt(atomPage, YUC_MOVIE_URL),
+          deadlineAt,
+          forceRefresh,
+        ),
+    ]);
   const supplemental = [futurePage, specialPage, moviePage]
     .flatMap((page) => page.entries)
     .filter((entry) => entryBelongsToQuarter(entry, year, season));
@@ -282,6 +291,15 @@ export async function getYucEntriesForQuarter(
     checkedAt:
       Math.max(...pages.map((page) => page.checkedAt ?? 0), 0) || null,
   };
+}
+
+/** Serialize one upstream family without blocking unrelated parser/cache work. */
+export async function runSequentially<T>(
+  tasks: readonly (() => Promise<T>)[],
+): Promise<T[]> {
+  const results: T[] = [];
+  for (const task of tasks) results.push(await task());
+  return results;
 }
 
 function atomPageUpdatedAt(
