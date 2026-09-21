@@ -45,6 +45,11 @@ interface ApiResponse {
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Called after the dialog's close motion has settled. Parents that conditionally
+   * mount this dialog should clear their target from this callback.
+   */
+  onExitComplete?: () => void;
   animeId: number;
   episodeNumber: number;
   animeTitle: string;
@@ -61,6 +66,7 @@ type PushState =
 export function EpisodeSourceDialog({
   open,
   onOpenChange,
+  onExitComplete,
   animeId,
   episodeNumber,
   animeTitle,
@@ -76,6 +82,42 @@ export function EpisodeSourceDialog({
   const [pushById, setPushById] = useState<Record<string, PushState>>({});
 
   const reqIdRef = useRef(0);
+  const openRef = useRef(open);
+  const hasOpenedRef = useRef(open);
+  const exitPendingRef = useRef(false);
+  const exitTimerRef = useRef<number | null>(null);
+  const exitFrameRef = useRef<number | null>(null);
+  const onExitCompleteRef = useRef(onExitComplete);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  openRef.current = open;
+  onExitCompleteRef.current = onExitComplete;
+
+  const cancelExit = useCallback(() => {
+    if (exitTimerRef.current != null) {
+      window.clearTimeout(exitTimerRef.current);
+      exitTimerRef.current = null;
+    }
+    if (exitFrameRef.current != null) {
+      window.cancelAnimationFrame(exitFrameRef.current);
+      exitFrameRef.current = null;
+    }
+    exitPendingRef.current = false;
+  }, []);
+
+  const completeExit = useCallback(() => {
+    if (openRef.current || !exitPendingRef.current) return;
+    if (exitFrameRef.current != null) return;
+
+    // Let Radix Presence process its own animation event before the parent removes
+    // the subtree. The guard also cancels stale completion when the dialog reopens.
+    exitFrameRef.current = window.requestAnimationFrame(() => {
+      exitFrameRef.current = null;
+      if (openRef.current || !exitPendingRef.current) return;
+      cancelExit();
+      onExitCompleteRef.current?.();
+    });
+  }, [cancelExit]);
 
   const fetchSources = useCallback(
     async (overrideQ?: string) => {
@@ -116,6 +158,23 @@ export function EpisodeSourceDialog({
     setPushById({});
     void fetchSources();
   }, [open, fetchSources]);
+
+  useEffect(() => {
+    if (open) {
+      hasOpenedRef.current = true;
+      cancelExit();
+      return;
+    }
+    if (!hasOpenedRef.current) return;
+
+    exitPendingRef.current = true;
+    exitTimerRef.current = window.setTimeout(
+      completeExit,
+      readModalCloseDurationMs() + 50,
+    );
+
+    return cancelExit;
+  }, [open, cancelExit, completeExit]);
 
   const submitOverride = () => {
     void fetchSources(q);
@@ -253,6 +312,24 @@ export function EpisodeSourceDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="t-modal-overlay fixed inset-0 bg-black/65 backdrop-blur-[6px] z-50" />
         <Dialog.Content
+          onOpenAutoFocus={() => {
+            const active = document.activeElement;
+            returnFocusRef.current = active instanceof HTMLElement ? active : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            if (openRef.current) {
+              event.preventDefault();
+              return;
+            }
+            const trigger = returnFocusRef.current;
+            returnFocusRef.current = null;
+            if (!trigger?.isConnected) return;
+            event.preventDefault();
+            trigger.focus();
+          }}
+          onAnimationEnd={(event) => {
+            if (event.animationName === "t-modal-close") completeExit();
+          }}
           className={cn(
             "t-modal t-modal-top fixed left-1/2 top-[14%] z-50",
             "w-[760px] max-w-[94vw] max-h-[78vh] flex flex-col",
@@ -450,6 +527,26 @@ export function EpisodeSourceDialog({
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function readModalCloseDurationMs(): number {
+  if (typeof window === "undefined") return 150;
+
+  const styles = getComputedStyle(document.documentElement);
+  const rawValues = [
+    styles.getPropertyValue("--modal-close-dur"),
+    styles.getPropertyValue("--duration-quick"),
+  ];
+
+  for (const raw of rawValues) {
+    const match = raw.trim().match(/^(-?\d*\.?\d+)(ms|s)$/);
+    if (!match) continue;
+    const amount = Number(match[1]);
+    if (!Number.isFinite(amount)) continue;
+    return Math.max(0, match[2] === "s" ? amount * 1000 : amount);
+  }
+
+  return 150;
 }
 
 function duplicateLabel(reason?: DownloadDuplicateReason): string {

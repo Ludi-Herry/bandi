@@ -52,6 +52,8 @@ export function EpisodeGrid({
         (episode.airedAt && episode.airedAt.getTime() <= now),
     );
   const [openEp, setOpenEp] = useState<number | null>(null);
+  const [episodeDialogOpen, setEpisodeDialogOpen] = useState(false);
+  const [seasonDialogMounted, setSeasonDialogMounted] = useState(false);
   const [seasonDialogOpen, setSeasonDialogOpen] = useState(false);
   const [displayCurrentEpisode, setDisplayCurrentEpisode] =
     useState(currentEpisode);
@@ -133,7 +135,10 @@ export function EpisodeGrid({
           </div>
           <button
             type="button"
-            onClick={() => setSeasonDialogOpen(true)}
+            onClick={() => {
+              setSeasonDialogMounted(true);
+              setSeasonDialogOpen(true);
+            }}
             className={cn(
               "inline-flex h-8 items-center justify-center gap-1.5 rounded-[6px] border px-3",
               "border-[color:var(--border-default)] bg-[color:var(--bg-surface)]",
@@ -205,7 +210,10 @@ export function EpisodeGrid({
                   type="button"
                   aria-label={`搜索 EP.${episodeLabel} 下载源`}
                   title={`第 ${ep.number} 集 · 点击找下载源`}
-                  onClick={() => setOpenEp(ep.number)}
+                  onClick={() => {
+                    setOpenEp(ep.number);
+                    setEpisodeDialogOpen(true);
+                  }}
                   className="absolute inset-0 z-[1] rounded-[8px] focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
                 />
               )}
@@ -265,9 +273,11 @@ export function EpisodeGrid({
 
       {openEp != null && (
         <EpisodeSourceDialog
-          open={openEp != null}
-          onOpenChange={(o) => {
-            if (!o) setOpenEp(null);
+          open={episodeDialogOpen}
+          onOpenChange={setEpisodeDialogOpen}
+          onExitComplete={() => {
+            setOpenEp(null);
+            setEpisodeDialogOpen(false);
           }}
           animeId={animeId}
           animeTitle={animeTitle}
@@ -275,10 +285,14 @@ export function EpisodeGrid({
         />
       )}
 
-      {seasonDialogOpen && (
+      {seasonDialogMounted && (
         <EpisodeSourceDialog
           open={seasonDialogOpen}
-          onOpenChange={(o) => setSeasonDialogOpen(o)}
+          onOpenChange={setSeasonDialogOpen}
+          onExitComplete={() => {
+            setSeasonDialogMounted(false);
+            setSeasonDialogOpen(false);
+          }}
           animeId={animeId}
           animeTitle={animeTitle}
           episodeNumber={0}
