@@ -43,7 +43,11 @@ export function PlayButton({
         asChild
         variant={variant}
         size={size}
-        className={cn(iconOnly && "px-0", buttonClassName)}
+        className={cn(
+          iconOnly && "px-0",
+          variant === "primary" && "motion-safe:active:scale-[0.98]",
+          buttonClassName,
+        )}
       >
         <a href={href} aria-label={iconOnly ? label : undefined} title={label}>
           <Play size={iconSize} strokeWidth={2.8} />

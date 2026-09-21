@@ -239,6 +239,7 @@ export function BrowseCard({
   return (
     <div className="t-tilt group rounded-[8px]">
       <article
+        data-card-key={`browse:${item.itemKey}`}
         className={cardClass}
         onClick={(event) => {
           if (event.defaultPrevented) return;

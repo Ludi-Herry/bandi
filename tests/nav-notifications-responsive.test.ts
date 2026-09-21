@@ -138,9 +138,9 @@ test("home hero keeps plain carousel arrows beside the thumbnail rail", () => {
   assert.doesNotMatch(heroSource, /backdrop-blur-\[14px\]/);
   assert.match(
     heroSource,
-    /\(current - 1 \+ slides\.length\) % slides\.length/,
+    /requestSlide\(\(navigationIndex - 1 \+ slides\.length\) % slides\.length\)/,
   );
-  assert.match(heroSource, /\(current \+ 1\) % slides\.length/);
+  assert.match(heroSource, /requestSlide\(\(navigationIndex \+ 1\) % slides\.length\)/);
 });
 
 test("Bangumi covers load directly after entering the viewport", () => {

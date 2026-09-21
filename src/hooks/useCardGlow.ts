@@ -18,6 +18,8 @@ export function useCardGlow<T extends HTMLElement = HTMLElement>(
   deps: unknown[] = [],
 ) {
   const ref = useRef<T | null>(null);
+  const revealedKeysRef = useRef(new Set<string>());
+  const revealedNodesRef = useRef(new WeakSet<HTMLElement>());
 
   useEffect(() => {
     const root = ref.current;
@@ -35,12 +37,18 @@ export function useCardGlow<T extends HTMLElement = HTMLElement>(
 
     const revealTimers: number[] = [];
     const revealFrames: number[] = [];
+    const isUnrevealed = (el: HTMLElement) => {
+      const key = el.dataset.cardKey;
+      return !revealedNodesRef.current.has(el) && !(key && revealedKeysRef.current.has(key));
+    };
 
     const restartOrbit = (el: HTMLElement, delay: number) => {
       el.classList.remove("is-revealed");
       const timer = window.setTimeout(() => {
         const firstFrame = window.requestAnimationFrame(() => {
           const secondFrame = window.requestAnimationFrame(() => {
+            revealedNodesRef.current.add(el);
+            if (el.dataset.cardKey) revealedKeysRef.current.add(el.dataset.cardKey);
             el.classList.add("is-revealed");
           });
           revealFrames.push(secondFrame);
@@ -59,6 +67,7 @@ export function useCardGlow<T extends HTMLElement = HTMLElement>(
             if (!entry.isIntersecting) return;
             const el = entry.target as HTMLElement;
             io?.unobserve(el);
+            if (!isUnrevealed(el)) return;
             // 错开一点点，让网格里的卡片不要一起闪。
             // 先等一小段时间，避免父级入场淡入还没结束时 orbit 已经跑完。
             const delay =
@@ -70,9 +79,13 @@ export function useCardGlow<T extends HTMLElement = HTMLElement>(
         },
         { rootMargin: "0px 0px -10% 0px", threshold: 0.15 },
       );
-      cards.forEach((c) => io!.observe(c));
-    } else {
-      cards.forEach((c, idx) => restartOrbit(c, Math.min(idx, 8) * 70));
+      cards.forEach((c) => {
+        if (isUnrevealed(c)) io!.observe(c);
+      });
+    } else if (!reduceMotion) {
+      cards.forEach((c, idx) => {
+        if (isUnrevealed(c)) restartOrbit(c, Math.min(idx, 8) * 70);
+      });
     }
 
     // —— 鼠标跟随描边

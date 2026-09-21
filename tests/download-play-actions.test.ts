@@ -171,7 +171,7 @@ test("home hero keeps a persistent, responsive thumbnail rail", () => {
   assert.match(heroSource, /min-\[1440px\]:h-14/);
   assert.match(
     heroSource,
-    /<\/motion\.div>\s*<div className="pointer-events-auto mt-6/,
+    /<\/motion\.div>\s*<\/AnimatePresence>\s*<div className="pointer-events-auto mt-6/,
   );
   assert.doesNotMatch(heroSource, /THUMBNAIL_GROUP_SIZE/);
   assert.doesNotMatch(heroSource, /visibleThumbnailSlides/);

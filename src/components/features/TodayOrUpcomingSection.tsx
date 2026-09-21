@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight, Calendar, Search } from "lucide-react";
 import { GlassPanel } from "@/components/ui";
 import { AnimeCard } from "@/components/features/AnimeCard";
@@ -74,9 +74,11 @@ function formatUpcomingLabel(
  */
 export function TodayOrUpcomingSection({ todayUpdates, upcomingItems }: Props) {
   const [view, setView] = useState<"today" | "upcoming">("today");
+  const shouldReduceMotion = useReducedMotion();
   const [sourceEpisode, setSourceEpisode] = useState<TodayUpdateView | null>(
     null,
   );
+  const [sourceOpen, setSourceOpen] = useState(false);
 
   const bothEmpty = todayUpdates.length === 0 && upcomingItems.length === 0;
   // 两边都空就不显示切换按钮
@@ -110,7 +112,7 @@ export function TodayOrUpcomingSection({ todayUpdates, upcomingItems }: Props) {
             </span>
             {title}
           </h2>
-          <p className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+          <p className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
             {subtitle}
           </p>
         </div>
@@ -120,7 +122,7 @@ export function TodayOrUpcomingSection({ todayUpdates, upcomingItems }: Props) {
             onClick={() =>
               setView((v) => (v === "today" ? "upcoming" : "today"))
             }
-            className="text-[12px] text-[color:var(--text-muted)] hover:text-[color:var(--accent)] inline-flex items-center gap-1 transition-colors outline-none"
+            className="text-[12px] text-[color:var(--text-secondary)] hover:text-[color:var(--accent)] inline-flex items-center gap-1 transition-colors outline-none"
           >
             {view === "today" ? (
               <>
@@ -137,15 +139,20 @@ export function TodayOrUpcomingSection({ todayUpdates, upcomingItems }: Props) {
         )}
       </header>
 
-      <div ref={cardsRef} className="relative overflow-hidden">
-        <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        ref={cardsRef}
+        layout={shouldReduceMotion ? false : "size"}
+        transition={{ layout: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
+        className="relative overflow-hidden"
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
           {view === "today" ? (
             <motion.div
               key="today"
-              initial={{ opacity: 0, x: 24 }}
+              initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -24 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+              transition={{ duration: shouldReduceMotion ? 0.12 : 0.24, ease: [0.22, 1, 0.36, 1] }}
             >
               {todayUpdates.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -167,7 +174,10 @@ export function TodayOrUpcomingSection({ todayUpdates, upcomingItems }: Props) {
                       actions={
                         <TodayUpdateActions
                           item={u}
-                          onSearch={() => setSourceEpisode(u)}
+                          onSearch={() => {
+                            setSourceEpisode(u);
+                            setSourceOpen(true);
+                          }}
                         />
                       }
                     />
@@ -184,10 +194,10 @@ export function TodayOrUpcomingSection({ todayUpdates, upcomingItems }: Props) {
           ) : (
             <motion.div
               key="upcoming"
-              initial={{ opacity: 0, x: 24 }}
+              initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -24 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
+              transition={{ duration: shouldReduceMotion ? 0.12 : 0.24, ease: [0.22, 1, 0.36, 1] }}
             >
               {upcomingItems.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -218,13 +228,15 @@ export function TodayOrUpcomingSection({ todayUpdates, upcomingItems }: Props) {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {sourceEpisode && (
         <EpisodeSourceDialog
-          open={sourceEpisode != null}
-          onOpenChange={(open) => {
-            if (!open) setSourceEpisode(null);
+          open={sourceOpen}
+          onOpenChange={setSourceOpen}
+          onExitComplete={() => {
+            setSourceEpisode(null);
+            setSourceOpen(false);
           }}
           animeId={sourceEpisode.animeId}
           animeTitle={sourceEpisode.title}

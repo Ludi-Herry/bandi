@@ -840,6 +840,11 @@ html[data-desktop-app="true"] .mood-picker-dialog {
   padding-bottom: 1.5rem;
 }
 
+.catalog-page-hero--browse,
+.catalog-page-hero--browse .catalog-page-hero-content {
+  min-height: 11.5rem;
+}
+
 @media (min-width: 640px) {
   :root {
     --app-page-padding: 1.5rem;
@@ -848,6 +853,10 @@ html[data-desktop-app="true"] .mood-picker-dialog {
 
   .catalog-page-hero {
     height: 15rem;
+  }
+
+  .catalog-page-hero--browse {
+    height: 11.5rem;
   }
 }
 
@@ -2156,7 +2165,12 @@ html[data-desktop-app="true"] .mood-picker-dialog {
 .anime-card-glow {
   position: relative;
   isolation: isolate;
-  transition: transform 220ms var(--ease-out);
+  scale: 1;
+  transition: transform 220ms var(--ease-out), scale 140ms var(--ease-smooth-out);
+}
+
+.anime-card-glow:has(> a:active) {
+  scale: 0.985;
 }
 
 .anime-card-glow:not(.t-tilt-card):hover {
@@ -2397,6 +2411,9 @@ html[data-desktop-app="true"] .mood-picker-dialog {
   }
   .anime-card-glow {
     transition: none;
+  }
+  .anime-card-glow:has(> a:active) {
+    scale: 1;
   }
   .anime-card-glow:not(.t-tilt-card):hover {
     transform: none;

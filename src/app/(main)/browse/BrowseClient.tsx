@@ -8,7 +8,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { AlertCircle, Loader2, Search } from "lucide-react";
+import { AlertCircle, ChevronDown, Loader2, Search, SlidersHorizontal, X } from "lucide-react";
 import { ClearableInput, GlassPanel } from "@/components/ui";
 import { AnimeCover } from "@/components/features/AnimeCover";
 import { BrowseCard } from "@/components/features/BrowseCard";
@@ -142,6 +142,7 @@ export function BrowseClient({
     Record<FilterKey, string | null>
   >(DEFAULT_FILTERS);
   const [query, setQuery] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   // 评分排序方向，默认高在前
   const [scoreOrder, setScoreOrder] = useState<"desc" | "asc">("desc");
 
@@ -437,11 +438,14 @@ export function BrowseClient({
     availableOptions.source.length > 0 ||
     availableOptions.genre.length > 0 ||
     availableOptions.region.length > 0;
+  const selectedFilters = (Object.keys(FILTER_LABEL) as FilterKey[]).filter(
+    (key) => activeFilters[key] != null,
+  );
 
   return (
     <div className="relative">
       {/* ========== Hero ========== */}
-      <section className="catalog-page-hero">
+      <section className="catalog-page-hero catalog-page-hero--browse">
         <div
           aria-hidden
           className="absolute -inset-5 flex scale-[1.04]"
@@ -497,8 +501,8 @@ export function BrowseClient({
       </section>
 
       {/* ========== Tabs + 筛选 + 列表 ========== */}
-      <section className="app-page-container py-6 sm:py-8">
-        <div className="mb-6 border-b border-[color:var(--border-subtle)]">
+      <section className="app-page-container py-5 sm:py-6">
+        <div className="mb-4 border-b border-[color:var(--border-subtle)]">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
             <div
               ref={quarterTabsRef}
@@ -534,7 +538,7 @@ export function BrowseClient({
               })}
             </div>
             <div className="flex flex-wrap items-center gap-2 pb-2 lg:shrink-0 lg:justify-end">
-              <span className="text-[12px] leading-relaxed text-[color:var(--text-muted)] lg:text-right">
+              <span className="text-[12px] leading-relaxed text-[color:var(--text-secondary)] lg:text-right">
                 {seasonLabel} · {summary}
               </span>
               <AnimeDataRefreshButton
@@ -558,94 +562,21 @@ export function BrowseClient({
 
         {/* ─────── 筛选区 ─────── */}
         {showFilters && (
-          <div
-            className={cn(
-              "mb-6 rounded-[8px] border border-[color:var(--border-subtle)]",
-              "bg-[color:var(--bg-surface)] p-4 touch-pan-y",
-            )}
-          >
-            <div className="flex flex-col gap-3">
-              <div className="flex min-h-[28px] flex-col gap-2 min-[520px]:flex-row min-[520px]:items-start min-[520px]:gap-3">
-                <div
-                  className={cn(
-                    "shrink-0 pt-[3px] min-[520px]:w-12",
-                    "text-[12px] text-[color:var(--text-muted)]",
-                  )}
-                >
-                  年份
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {yearOptions.map((option) => (
-                    <FilterChip
-                      key={option}
-                      active={option === initialYear}
-                      onClick={() => switchYear(option)}
-                    >
-                      {option}年
-                    </FilterChip>
-                  ))}
-                </div>
+          <div className="mb-5 rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="min-w-[220px] flex-[1_1_260px]">
+                <ClearableInput
+                  value={query}
+                  onValueChange={setQuery}
+                  placeholder="搜索番剧标题（中文或日文）"
+                  prefixIcon={<Search size={14} />}
+                  spellCheck={false}
+                  className="h-9 rounded-[6px] border border-[color:var(--border-subtle)] bg-black/20"
+                  inputClassName="text-[12px]"
+                />
               </div>
-
-              {(Object.keys(FILTER_LABEL) as FilterKey[]).map((key) => {
-                const opts = availableOptions[key];
-                if (opts.length === 0) return null;
-                const selected = activeFilters[key];
-                return (
-                  <div
-                    key={key}
-                    className="flex min-h-[28px] flex-col gap-2 min-[520px]:flex-row min-[520px]:items-start min-[520px]:gap-3"
-                  >
-                    <div
-                      className={cn(
-                        "shrink-0 pt-[3px] min-[520px]:w-12",
-                        "text-[12px] text-[color:var(--text-muted)]",
-                      )}
-                    >
-                      {FILTER_LABEL[key]}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <FilterChip
-                        active={selected === null}
-                        onClick={() => setFilter(key, null)}
-                      >
-                        全部
-                      </FilterChip>
-                      {opts.map((opt) => (
-                        <FilterChip
-                          key={opt}
-                          active={selected === opt}
-                          onClick={() =>
-                            setFilter(key, selected === opt ? null : opt)
-                          }
-                        >
-                          {opt}
-                        </FilterChip>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* 搜索框 + 评分排序：独立一行，放筛选区底部 */}
-              <div className="mt-1 flex flex-wrap items-center gap-3 border-t border-[color:var(--border-subtle)] pt-3">
-                <div className="min-w-12 shrink-0 text-[12px] text-[color:var(--text-muted)]">
-                  搜索
-                </div>
-                <div className="min-w-[200px] flex-1">
-                  <ClearableInput
-                    value={query}
-                    onValueChange={setQuery}
-                    placeholder="搜索番剧标题（中文或日文）"
-                    prefixIcon={<Search size={14} />}
-                    spellCheck={false}
-                    className="h-8 rounded-[6px] bg-[color:var(--bg-surface-hover)]"
-                    inputClassName="text-[12px]"
-                  />
-                </div>
-                <span className="ml-auto text-[12px] text-[color:var(--text-muted)]">
-                  评分
-                </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="mr-1 text-[12px] text-[color:var(--text-secondary)]">评分</span>
                 <FilterChip
                   active={hasScores && scoreOrder === "desc"}
                   disabled={!hasScores}
@@ -660,13 +591,76 @@ export function BrowseClient({
                 >
                   低在前
                 </FilterChip>
-                <span
-                  role="status"
-                  className="whitespace-nowrap text-[11px] text-[color:var(--text-muted)]"
-                >
-                  {scoreHint}
-                </span>
               </div>
+              <button
+                type="button"
+                aria-expanded={showAdvancedFilters}
+                aria-controls="browse-advanced-filters"
+                onClick={() => setShowAdvancedFilters((open) => !open)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-[6px] border border-[color:var(--border-default)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-surface-hover)] hover:text-[color:var(--text-primary)] focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
+              >
+                <SlidersHorizontal size={13} />
+                更多筛选
+                <ChevronDown size={13} className={cn("transition-transform", showAdvancedFilters && "rotate-180")} />
+              </button>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[color:var(--border-subtle)] pt-3">
+              <span className="mr-1 text-[11px] text-[color:var(--text-secondary)]">当前条件</span>
+              {selectedFilters.length === 0 ? (
+                <span className="text-[11px] text-[color:var(--text-secondary)]">全部分类与地区</span>
+              ) : (
+                selectedFilters.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFilter(key, null)}
+                    aria-label={`移除${FILTER_LABEL[key]}筛选：${activeFilters[key]}`}
+                    className="inline-flex items-center gap-1 rounded-[5px] border border-[color:var(--accent-muted)] bg-[color:var(--accent-subtle)] px-2 py-1 text-[11px] text-[color:var(--accent)] transition-colors hover:bg-[color:var(--accent-muted)]"
+                  >
+                    {activeFilters[key]}
+                    <X size={10} />
+                  </button>
+                ))
+              )}
+              <span role="status" className="ml-auto whitespace-nowrap text-[11px] text-[color:var(--text-secondary)]">
+                {scoreHint}
+              </span>
+            </div>
+            <div id="browse-advanced-filters" hidden={!showAdvancedFilters} className="mt-3 space-y-3 border-t border-[color:var(--border-subtle)] pt-3">
+                <div className="flex min-h-[28px] flex-col gap-2 min-[520px]:flex-row min-[520px]:items-start min-[520px]:gap-3">
+                  <div className="shrink-0 pt-[3px] text-[12px] text-[color:var(--text-secondary)] min-[520px]:w-12">年份</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {yearOptions.map((option) => (
+                      <FilterChip key={option} active={option === initialYear} onClick={() => switchYear(option)}>
+                        {option}年
+                      </FilterChip>
+                    ))}
+                  </div>
+                </div>
+                {(Object.keys(FILTER_LABEL) as FilterKey[]).map((key) => {
+                  const opts = availableOptions[key];
+                  if (opts.length === 0) return null;
+                  const selected = activeFilters[key];
+                  return (
+                    <div key={key} className="flex min-h-[28px] flex-col gap-2 min-[520px]:flex-row min-[520px]:items-start min-[520px]:gap-3">
+                      <div className="shrink-0 pt-[3px] text-[12px] text-[color:var(--text-secondary)] min-[520px]:w-12">
+                        {FILTER_LABEL[key]}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <FilterChip active={selected === null} onClick={() => setFilter(key, null)}>全部</FilterChip>
+                        {opts.map((opt) => (
+                          <FilterChip
+                            key={opt}
+                            active={selected === opt}
+                            onClick={() => setFilter(key, selected === opt ? null : opt)}
+                          >
+                            {opt}
+                          </FilterChip>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </div>
         )}

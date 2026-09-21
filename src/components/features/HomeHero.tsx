@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChevronLeft, ChevronRight, Clock, Search, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Loader2, Search, Star } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatRatingScore } from "@/lib/rating";
 import { Button, Tag } from "@/components/ui";
@@ -36,6 +36,7 @@ interface HomeHeroProps {
 }
 
 const AUTOPLAY_MS = 6000;
+const COVER_PREPARE_TIMEOUT_MS = 1600;
 const THUMBNAILS_PER_GROUP = 5;
 const thumbnailNavigationButtonClassName =
   "inline-flex h-11 w-5 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-white/55 transition-[color,opacity,transform] duration-[var(--duration-quick)] [transition-timing-function:var(--ease-smooth-out)] hover:text-white active:scale-[0.9] focus-visible:outline-none focus-visible:text-[color:var(--accent)]";
@@ -49,21 +50,74 @@ interface SourceTarget {
 export function HomeHero({ slides }: HomeHeroProps) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [preparingIdx, setPreparingIdx] = useState<number | null>(null);
+  const [coverReady, setCoverReady] = useState(true);
   const [sourceTarget, setSourceTarget] = useState<SourceTarget | null>(null);
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const coverRequestRef = useRef(0);
+  const currentSlideIdRef = useRef<number | null>(null);
   const thumbnailViewportRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const shouldReduceMotion = useReducedMotion();
 
   const slide = slides[idx];
+  currentSlideIdRef.current = slide?.id ?? null;
+
+  const requestSlide = useCallback((nextIdx: number) => {
+    const target = slides[nextIdx];
+    if (!target) return;
+    const request = ++coverRequestRef.current;
+    if (nextIdx === idx) {
+      setPreparingIdx(null);
+      return;
+    }
+
+    setPreparingIdx(nextIdx);
+    const commit = (ready: boolean) => {
+      if (request !== coverRequestRef.current) return;
+      setCoverReady(ready);
+      setIdx(nextIdx);
+      setPreparingIdx(null);
+    };
+    if (!target.coverUrl) {
+      commit(false);
+      return;
+    }
+
+    const image = new window.Image();
+    let finished = false;
+    const finish = (ready: boolean) => {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timeout);
+      image.onload = null;
+      image.onerror = null;
+      commit(ready);
+    };
+    const timeout = window.setTimeout(() => finish(false), COVER_PREPARE_TIMEOUT_MS);
+    image.onload = () => {
+      if (image.decode) {
+        void image.decode().then(() => finish(true), () => finish(true));
+      } else {
+        finish(true);
+      }
+    };
+    image.onerror = () => finish(false);
+    image.src = target.coverUrl;
+  }, [idx, slides]);
+
+  useEffect(() => () => {
+    coverRequestRef.current += 1;
+  }, []);
 
   useEffect(() => {
-    if (paused || sourceTarget || slides.length < 2) return;
+    if (paused || sourceTarget || preparingIdx != null || slides.length < 2) return;
     const t = setTimeout(
-      () => setIdx((i) => (i + 1) % slides.length),
+      () => requestSlide((idx + 1) % slides.length),
       AUTOPLAY_MS,
     );
     return () => clearTimeout(t);
-  }, [idx, paused, slides.length, sourceTarget]);
+  }, [idx, paused, preparingIdx, requestSlide, slides.length, sourceTarget]);
 
   useEffect(() => {
     const viewport = thumbnailViewportRef.current;
@@ -112,16 +166,18 @@ export function HomeHero({ slides }: HomeHeroProps) {
       ? formatHeroAiringTime(slide.nextAiringAt)
       : null;
   const detailHref = `/anime/${slide.id}`;
+  const navigationIndex = preparingIdx ?? idx;
   const showPreviousSlide = () => {
-    setIdx((current) => (current - 1 + slides.length) % slides.length);
+    requestSlide((navigationIndex - 1 + slides.length) % slides.length);
   };
   const showNextSlide = () => {
-    setIdx((current) => (current + 1) % slides.length);
+    requestSlide((navigationIndex + 1) % slides.length);
   };
 
   return (
     <section
       className="home-hero relative h-[560px] w-full overflow-hidden -mt-16 lg:h-[640px]"
+      aria-busy={preparingIdx != null}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -131,15 +187,16 @@ export function HomeHero({ slides }: HomeHeroProps) {
         }
       }}
     >
-      {/* crossfade background */}
+      {/* Hold the current slide until its next cover is decoded, with a quiet fallback for missing covers. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 bg-[color:var(--bg-elevated)]" />
       <AnimatePresence mode="sync">
-        {slide.coverUrl && (
+        {slide.coverUrl && coverReady && (
           <motion.div
             key={slide.id}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: shouldReduceMotion ? 0.12 : 0.48 }}
             className="pointer-events-none absolute inset-0 z-0"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -147,6 +204,9 @@ export function HomeHero({ slides }: HomeHeroProps) {
               src={slide.coverUrl}
               alt={slide.title}
               className="pointer-events-none absolute inset-0 w-full h-full object-cover"
+              onError={() => {
+                if (currentSlideIdRef.current === slide.id) setCoverReady(false);
+              }}
             />
           </motion.div>
         )}
@@ -181,6 +241,15 @@ export function HomeHero({ slides }: HomeHeroProps) {
       {/* 内容层正常接收点击；背景和遮罩层禁点击。 */}
       <div className="app-page-container relative z-20 flex h-full flex-col justify-end gap-6 pb-8 lg:gap-7 lg:pb-10">
         <div className="w-full">
+          <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={slide.id}
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -6 }}
+            transition={{ duration: shouldReduceMotion ? 0.12 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full"
+          >
           <div className="max-w-[900px]">
             <div className="flex items-center gap-2 mb-3 text-[12px] text-[color:var(--text-secondary)]">
               <span data-tabular>{slide.year ?? "—"}</span>
@@ -197,16 +266,12 @@ export function HomeHero({ slides }: HomeHeroProps) {
               </span>
             </div>
 
-            <motion.h1
-              key={slide.id + "-title"}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.05 }}
+            <h1
               className="max-w-full text-balance text-[36px] font-extrabold leading-[1.04] text-[color:var(--text-primary)] sm:text-[52px] lg:text-[68px]"
               style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55)" }}
             >
               {slide.title}
-            </motion.h1>
+            </h1>
             {slide.titleJa && (
               <p className="mt-1.5 text-[14px] text-[color:var(--text-secondary)]">
                 {slide.titleJa}
@@ -214,13 +279,7 @@ export function HomeHero({ slides }: HomeHeroProps) {
             )}
           </div>
 
-          <motion.div
-            key={slide.id + "-meta"}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.12 }}
-            className="w-full"
-          >
+          <div className="w-full">
             <div className="max-w-[900px]">
               <div className="mt-4 flex flex-wrap items-center gap-4 sm:gap-5">
                 <div className="flex items-center gap-1.5">
@@ -238,7 +297,7 @@ export function HomeHero({ slides }: HomeHeroProps) {
                 </div>
                 <span
                   data-tabular
-                  className="text-[12px] text-[color:var(--text-muted)]"
+                  className="text-[12px] text-[color:var(--text-secondary)]"
                 >
                   {epLabel}
                 </span>
@@ -260,16 +319,25 @@ export function HomeHero({ slides }: HomeHeroProps) {
                 </div>
               )}
             </div>
+          </div>
           </motion.div>
+          </AnimatePresence>
 
           <div className="pointer-events-auto mt-6 flex flex-col gap-5 min-[1180px]:flex-row min-[1180px]:items-center min-[1180px]:justify-between min-[1180px]:gap-6">
+            <div className="min-h-10">
+            <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={slide.id + "-actions"}
               initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: shouldReduceMotion ? 0 : 0.2,
-                ease: [0.22, 1, 0.36, 1],
+              animate={{
+                opacity: 1,
+                y: 0,
+                transition: { duration: shouldReduceMotion ? 0.08 : 0.2, delay: shouldReduceMotion ? 0 : 0.06 },
+              }}
+              exit={{
+                opacity: 0,
+                y: shouldReduceMotion ? 0 : -4,
+                transition: { duration: shouldReduceMotion ? 0.08 : 0.18 },
               }}
               className="flex flex-wrap items-center gap-3"
             >
@@ -285,13 +353,14 @@ export function HomeHero({ slides }: HomeHeroProps) {
                 <Button
                   variant="primary"
                   size="md"
-                  onClick={() =>
+                  onClick={() => {
                     setSourceTarget({
                       animeId: slide.id,
                       animeTitle: slide.title,
                       episodeNumber: sourceEp,
-                    })
-                  }
+                    });
+                    setSourceOpen(true);
+                  }}
                 >
                   <Search size={16} />
                   找资源 EP.{String(sourceEp).padStart(2, "0")}
@@ -308,6 +377,8 @@ export function HomeHero({ slides }: HomeHeroProps) {
                 <a href={detailHref}>查看详情</a>
               </Button>
             </motion.div>
+            </AnimatePresence>
+            </div>
 
             {slides.length > 1 && (
               <div className="hidden shrink-0 items-center justify-end gap-1.5 lg:flex">
@@ -327,6 +398,7 @@ export function HomeHero({ slides }: HomeHeroProps) {
                   <div className="flex w-max items-center gap-2">
                     {slides.map((s, slideIndex) => {
                       const active = slideIndex === idx;
+                      const preparing = slideIndex === preparingIdx;
                       return (
                         <motion.button
                           key={s.id}
@@ -337,7 +409,7 @@ export function HomeHero({ slides }: HomeHeroProps) {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setIdx(slideIndex);
+                            requestSlide(slideIndex);
                           }}
                           animate={{
                             opacity: active ? 1 : 0.62,
@@ -363,10 +435,13 @@ export function HomeHero({ slides }: HomeHeroProps) {
                             "min-[1280px]:h-[52px] min-[1280px]:w-[88px] min-[1440px]:h-14 min-[1440px]:w-24",
                             active
                               ? "z-10 border-[color:var(--accent)] shadow-[0_4px_8px_rgba(0,0,0,0.45)]"
-                              : "border-transparent",
+                              : preparing
+                                ? "border-[color:var(--accent-muted)]"
+                                : "border-transparent",
                           )}
                           aria-label={`切换到 ${s.title}`}
                           aria-current={active ? "true" : undefined}
+                          aria-busy={preparing}
                         >
                           {s.coverUrl && (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -387,6 +462,7 @@ export function HomeHero({ slides }: HomeHeroProps) {
                           <span className="absolute bottom-1 left-1.5 right-1.5 truncate text-[10px] font-medium text-white">
                             {s.title}
                           </span>
+                          {preparing && <Loader2 aria-hidden size={12} className="absolute right-1 top-1 animate-spin text-white" />}
                         </motion.button>
                       );
                     })}
@@ -408,9 +484,11 @@ export function HomeHero({ slides }: HomeHeroProps) {
       </div>
       {sourceTarget && (
         <EpisodeSourceDialog
-          open={sourceTarget != null}
-          onOpenChange={(open) => {
-            if (!open) setSourceTarget(null);
+          open={sourceOpen}
+          onOpenChange={setSourceOpen}
+          onExitComplete={() => {
+            setSourceTarget(null);
+            setSourceOpen(false);
           }}
           animeId={sourceTarget.animeId}
           animeTitle={sourceTarget.animeTitle}

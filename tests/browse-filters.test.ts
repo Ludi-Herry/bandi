@@ -37,13 +37,13 @@ test("browse quarters use month labels and expose a Bangumi-style year filter", 
   assert.match(browseSource, /params\.set\("year", String\(nextYear\)\)/);
   assert.doesNotMatch(browseSource, /本季/);
   assert.doesNotMatch(browseSource, /SEASON_CN/);
-  assert.match(browseLoadingSource, /年份 \+ 4 行 chip \+ 搜索/);
+  assert.match(browseLoadingSource, /常用搜索、排序与当前条件摘要；细项默认收起/);
 });
 
 test("browse quarter tabs use a full-width divider and fit four quarters on phones", () => {
   assert.match(
     browseSource,
-    /mb-6 border-b border-\[color:var\(--border-subtle\)\]/,
+    /mb-4 border-b border-\[color:var\(--border-subtle\)\]/,
   );
   assert.match(
     browseSource,
@@ -88,8 +88,11 @@ test("browse keeps rating controls visible and progressively enriches Bangumi sc
   assert.match(browseSource, /部有评分/);
   assert.match(
     browseSource,
-    /role="status"[\s\S]*?className="whitespace-nowrap text-\[11px\]/,
+    /role="status"[\s\S]*?whitespace-nowrap text-\[11px\]/,
   );
+  assert.match(browseSource, /aria-expanded=\{showAdvancedFilters\}/);
+  assert.match(browseSource, /hidden=\{!showAdvancedFilters\}/);
+  assert.match(browseSource, /selectedFilters\.map/);
   assert.doesNotMatch(browseSource, /min-w-\[84px\]/);
   assert.match(browseSource, /bangumiId: scorePatch\?\.bangumiId \?\? it\.bangumiId/);
   assert.match(browseSource, /disabled=\{!hasScores\}/);

@@ -101,7 +101,7 @@ test("main pages keep the content gutter while the space switcher owns the windo
   assert.equal(cinemaDetailSource.match(/app-page-container/g)?.length, 2);
 });
 
-test("catalog page heroes share one height, content rail, and proxied poster art", () => {
+test("browse keeps its compact hero scoped while catalog pages retain their shared rail", () => {
   for (const source of [
     libraryPageSource,
     browseClientSource,
@@ -120,6 +120,8 @@ test("catalog page heroes share one height, content rail, and proxied poster art
     globalsSource,
     /@media \(min-width: 640px\)[\s\S]*?\.catalog-page-hero\s*\{[\s\S]*?height:\s*15rem/,
   );
+  assert.match(globalsSource, /\.catalog-page-hero--browse[\s\S]*?min-height:\s*11\.5rem/);
+  assert.match(browseClientSource, /catalog-page-hero catalog-page-hero--browse/);
   assert.match(
     globalsSource,
     /@media \(min-width: 900px\)[\s\S]*?\.catalog-page-hero-content\s*\{[\s\S]*?align-items:\s*center/,
@@ -144,16 +146,16 @@ test("catalog page heroes share one height, content rail, and proxied poster art
   );
 });
 
-test("anime and cinema catalog search rows share the same responsive layout", () => {
+test("anime compact search and cinema search rows remain responsive", () => {
   const sharedRowClass =
     /flex flex-wrap items-center gap-3 border-t border-\[color:var\(--border-subtle\)\] pt-3/;
 
-  assert.match(browseClientSource, sharedRowClass);
   assert.match(cinemaLibrarySource, sharedRowClass);
   assert.match(
     browseClientSource,
-    /min-w-\[200px\] flex-1[\s\S]*?h-8 rounded-\[6px\] bg-\[color:var\(--bg-surface-hover\)\]/,
+    /min-w-\[220px\] flex-\[1_1_260px\][\s\S]*?h-9 rounded-\[6px\] border border-\[color:var\(--border-subtle\)\] bg-black\/20/,
   );
+  assert.match(browseClientSource, /aria-expanded=\{showAdvancedFilters\}/);
   assert.doesNotMatch(browseClientSource, /md:max-w-\[360px\]/);
   assert.doesNotMatch(browseClientSource, /min-w-\[84px\]/);
 });
