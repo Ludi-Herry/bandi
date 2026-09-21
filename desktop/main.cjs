@@ -6,6 +6,7 @@ const {
   dialog,
   ipcMain,
   net: electronNet,
+  safeStorage,
   shell,
 } = require("electron");
 const { spawn, spawnSync } = require("node:child_process");
@@ -31,6 +32,10 @@ const { autoUpdater } = require("electron-updater");
 const {
   createAppUpdateController,
 } = require("../runtime/app-update.cjs");
+const {
+  JevDirectError,
+  evaluateSignedMoodRequest,
+} = require("./jev-direct.cjs");
 
 const APP_PORT_START = 31245;
 const QBIT_PORT_START = 18180;
@@ -64,6 +69,9 @@ let isQuitting = false;
 let shutdownComplete = false;
 let shutdownPromise = null;
 let desktopSessionToken = null;
+let jevBridgeSecret = null;
+let jevEvaluationInFlight = false;
+const usedJevQueryIds = new Map();
 let bootStage = "storage";
 let parentLeasePath = null;
 let parentLeaseToken = null;
@@ -356,6 +364,15 @@ function loadDesktopConfig(userDataDir) {
       videosDir,
     }),
     closeToTray: existing.closeToTray !== false,
+    jevLabRoot:
+      typeof existing.jevLabRoot === "string" && existing.jevLabRoot.trim()
+        ? existing.jevLabRoot.trim()
+        : null,
+    jevApiKeyEncrypted:
+      typeof existing.jevApiKeyEncrypted === "string" &&
+      existing.jevApiKeyEncrypted.length <= 8192
+        ? existing.jevApiKeyEncrypted
+        : null,
     onboardingVersion: Number.isInteger(existingOnboardingVersion)
       ? Math.max(0, existingOnboardingVersion)
       : 0,
@@ -1210,6 +1227,7 @@ async function startNextServer(runtimePathEnv) {
       BANDI_PARENT_LEASE_TOKEN: parentLeaseToken,
       BANDI_PARENT_LEASE_PID: String(process.pid),
       BANDI_PARENT_LEASE_MAX_AGE_MS: String(PARENT_LEASE_MAX_AGE_MS),
+      BANDI_JEV_BRIDGE_SECRET: jevBridgeSecret,
     },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
@@ -1254,6 +1272,169 @@ function getDesktopSettingsState() {
       desktopConfig.onboardingVersion >= ONBOARDING_VERSION,
     onboardingMode: desktopConfig.onboardingMode,
   };
+}
+
+function decryptJevApiKey() {
+  if (
+    process.platform !== "win32" ||
+    !safeStorage.isEncryptionAvailable() ||
+    !desktopConfig.jevApiKeyEncrypted
+  ) {
+    throw new JevDirectError("JEV_KEY_NOT_CONFIGURED");
+  }
+  try {
+    const key = safeStorage
+      .decryptString(Buffer.from(desktopConfig.jevApiKeyEncrypted, "base64"))
+      .trim();
+    if (key.length < 16 || key.length > 1024 || /\s/u.test(key)) {
+      throw new Error("invalid_key");
+    }
+    return key;
+  } catch {
+    throw new JevDirectError("JEV_KEY_UNAVAILABLE");
+  }
+}
+
+function getJevConnectionState() {
+  if (process.platform !== "win32") {
+    return {
+      available: false,
+      configured: false,
+      status: "unsupported",
+      provider: "TypeSafe",
+      model: "jev-1.13.0",
+    };
+  }
+  if (!safeStorage.isEncryptionAvailable()) {
+    return {
+      available: false,
+      configured: false,
+      status: "secure_storage_unavailable",
+      provider: "TypeSafe",
+      model: "jev-1.13.0",
+    };
+  }
+  if (!desktopConfig.jevApiKeyEncrypted) {
+    return {
+      available: true,
+      configured: false,
+      status: "not_configured",
+      provider: "TypeSafe",
+      model: "jev-1.13.0",
+    };
+  }
+  try {
+    decryptJevApiKey();
+    return {
+      available: true,
+      configured: true,
+      status: "ready",
+      provider: "TypeSafe",
+      model: "jev-1.13.0",
+    };
+  } catch {
+    return {
+      available: true,
+      configured: false,
+      status: "key_unavailable",
+      provider: "TypeSafe",
+      model: "jev-1.13.0",
+    };
+  }
+}
+
+function saveJevApiKey(input) {
+  if (process.platform !== "win32" || !safeStorage.isEncryptionAvailable()) {
+    return { ok: false, error: "系统安全存储当前不可用。" };
+  }
+  const key = typeof input?.apiKey === "string" ? input.apiKey.trim() : "";
+  if (key.length < 16 || key.length > 1024 || /\s/u.test(key)) {
+    return { ok: false, error: "请输入有效的 TypeSafe API Key。" };
+  }
+  try {
+    desktopConfig.jevApiKeyEncrypted = safeStorage
+      .encryptString(key)
+      .toString("base64");
+    saveDesktopConfig();
+    return { ok: true, state: getJevConnectionState() };
+  } catch {
+    return { ok: false, error: "API Key 未能安全保存。" };
+  }
+}
+
+function describeJevDirectError(code) {
+  if (code === "JEV_KEY_NOT_CONFIGURED" || code === "JEV_KEY_UNAVAILABLE") {
+    return "请先在设置中心安全保存 TypeSafe API Key。";
+  }
+  if (code === "JEV_HTTP_401" || code === "JEV_HTTP_403") {
+    return "TypeSafe API Key 无效或无权使用 Jev。";
+  }
+  if (code === "JEV_HTTP_429") {
+    return "TypeSafe 当前请求过多，本次未自动重试。";
+  }
+  if (code === "JEV_TIMEOUT" || code === "JEV_REQUEST_FAILED") {
+    return "TypeSafe 本次连接失败，本次未自动重试。";
+  }
+  if (
+    code === "JEV_BRIDGE_REPLAYED" ||
+    code === "JEV_BRIDGE_PAYLOAD_INVALID" ||
+    code === "JEV_BRIDGE_SIGNATURE_INVALID"
+  ) {
+    return "本次判断请求已失效，请重新点击开始判断。";
+  }
+  return "Jev 本次判断未完成，本次未自动重试。";
+}
+
+async function evaluateMoodWithJev(input) {
+  if (jevEvaluationInFlight) {
+    return { ok: false, code: "JEV_BUSY", error: "已有一次 Jev 判断正在进行。" };
+  }
+  jevEvaluationInFlight = true;
+  try {
+    const evaluation = await evaluateSignedMoodRequest({
+      payloadJson: input?.payloadJson,
+      signature: input?.signature,
+      bridgeSecret: jevBridgeSecret,
+      getApiKey: decryptJevApiKey,
+      fetchImpl: (url, init) => electronNet.fetch(url, init),
+      usedQueryIds: usedJevQueryIds,
+    });
+    return { ok: true, evaluation };
+  } catch (error) {
+    const inheritedCode =
+      error &&
+      typeof error === "object" &&
+      typeof error.code === "string" &&
+      /^JEV_[A-Z0-9_]+$/u.test(error.code)
+        ? error.code
+        : null;
+    const code =
+      error instanceof JevDirectError
+        ? error.code
+        : inheritedCode || "JEV_UNKNOWN";
+    const errorName =
+      error &&
+      typeof error === "object" &&
+      typeof error.name === "string" &&
+      /^[A-Za-z][A-Za-z0-9]*Error$/u.test(error.name)
+        ? error.name
+        : "UnknownError";
+    const referenceMatch =
+      errorName === "ReferenceError" &&
+      error &&
+      typeof error === "object" &&
+      typeof error.message === "string"
+        ? error.message.match(/^([A-Za-z_$][A-Za-z0-9_$]*) is not defined$/u)
+        : null;
+    const referenceName = referenceMatch?.[1] || "none";
+    appendLog(
+      "jev.log",
+      `[jev] ${new Date().toISOString()} evaluation_failed code=${code} type=${errorName} reference=${referenceName}\n`,
+    );
+    return { ok: false, code, error: describeJevDirectError(code) };
+  } finally {
+    jevEvaluationInFlight = false;
+  }
 }
 
 function writeManagedQbitConfig() {
@@ -1355,6 +1536,27 @@ function registerDesktopIpc() {
   });
   ipcMain.handle("bandi:save-desktop-settings", (_event, input) =>
     saveDesktopSettings(input),
+  );
+  ipcMain.handle("bandi:get-jev-connection-state", (event) =>
+    isTrustedMainWindowSender(event)
+      ? getJevConnectionState()
+      : {
+          available: false,
+          configured: false,
+          status: "unsupported",
+          provider: "TypeSafe",
+          model: "jev-1.13.0",
+        },
+  );
+  ipcMain.handle("bandi:save-jev-api-key", (event, input) =>
+    isTrustedMainWindowSender(event)
+      ? saveJevApiKey(input)
+      : { ok: false, error: "forbidden" },
+  );
+  ipcMain.handle("bandi:evaluate-mood-with-jev", (event, input) =>
+    isTrustedMainWindowSender(event)
+      ? evaluateMoodWithJev(input)
+      : { ok: false, code: "JEV_FORBIDDEN", error: "forbidden" },
   );
   ipcMain.handle("bandi:get-download-service-state", () =>
     getDownloadServiceState(),
@@ -1623,6 +1825,7 @@ async function boot() {
   const userData = app.getPath("userData");
   ensureDir(userData);
   desktopSessionToken = randomSecret(32);
+  jevBridgeSecret = randomSecret(32);
   desktopConfig = loadDesktopConfig(userData);
   startParentLease();
   initializeUpdateController();

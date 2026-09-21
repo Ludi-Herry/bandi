@@ -793,6 +793,33 @@ select:not([data-no-focus-ring]):focus-visible,
   border-radius: var(--radius-card, 8px);
 }
 
+/* 长文本与候选列表需要实体阅读底板；只在边缘保留克制的玻璃质感。 */
+.mood-picker-dialog {
+  --text-secondary: color-mix(
+    in srgb,
+    var(--text-primary) 70%,
+    var(--bg-elevated)
+  );
+  --text-muted: color-mix(
+    in srgb,
+    var(--text-primary) 54%,
+    var(--bg-elevated)
+  );
+  background: color-mix(in srgb, var(--bg-elevated) 97%, transparent);
+  backdrop-filter: blur(24px) saturate(108%);
+  -webkit-backdrop-filter: blur(24px) saturate(108%);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-panel, 12px);
+  box-shadow:
+    0 28px 96px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+html[data-desktop-app="true"] .mood-picker-dialog {
+  /* 在扣除 44px 自绘标题栏后的页面可用高度内居中。 */
+  top: calc(50% + 22px);
+}
+
 .app-page-container {
   width: 100%;
   margin-inline: auto;

@@ -34,7 +34,13 @@ export const metadata = {
 export default async function CinemaPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ tab?: string; genre?: string; kind?: string }>;
+  searchParams?: Promise<{
+    tab?: string;
+    genre?: string;
+    kind?: string;
+    q?: string;
+    year?: string;
+  }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -130,6 +136,8 @@ export default async function CinemaPage({
       initialTab={sp.tab}
       initialGenre={sp.genre}
       initialKind={sp.kind}
+      initialQuery={sp.q}
+      initialYear={sp.year}
       todayUpdates={todayUpdates}
       upcomingItems={upcomingItems}
       continueItems={continueItems}

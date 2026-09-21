@@ -1,3 +1,5 @@
+import type { MoodEvaluationResponse } from "@/lib/mood-picker";
+
 export {};
 
 declare global {
@@ -35,6 +37,34 @@ declare global {
     ok: boolean;
     error?: string;
     settings?: DesktopSettingsState;
+  }
+
+  type DesktopJevConnectionStatus =
+    | "ready"
+    | "not_configured"
+    | "key_unavailable"
+    | "secure_storage_unavailable"
+    | "unsupported";
+
+  interface DesktopJevConnectionState {
+    available: boolean;
+    configured: boolean;
+    status: DesktopJevConnectionStatus;
+    provider: "TypeSafe";
+    model: "jev-1.13.0";
+  }
+
+  interface DesktopJevSaveResult {
+    ok: boolean;
+    error?: string;
+    state?: DesktopJevConnectionState;
+  }
+
+  interface DesktopJevEvaluationResult {
+    ok: boolean;
+    error?: string;
+    code?: string;
+    evaluation?: MoodEvaluationResponse;
   }
 
   interface DesktopDirectoryChoice {
@@ -137,6 +167,12 @@ declare global {
       saveSettings(
         input: DesktopSettingsSaveInput,
       ): Promise<DesktopSettingsSaveResult>;
+      getJevConnectionState?(): Promise<DesktopJevConnectionState>;
+      saveJevApiKey?(input: { apiKey: string }): Promise<DesktopJevSaveResult>;
+      evaluateMoodWithJev?(input: {
+        payloadJson: string;
+        signature: string;
+      }): Promise<DesktopJevEvaluationResult>;
       getDownloadServiceState(): Promise<DesktopDownloadServiceState>;
       retryDownloadService(): Promise<DesktopDownloadServiceRetryResult>;
       getUpdateState(): Promise<DesktopUpdateState>;

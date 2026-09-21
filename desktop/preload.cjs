@@ -10,6 +10,12 @@ contextBridge.exposeInMainWorld("bandiDesktop", {
     ipcRenderer.invoke("bandi:choose-media-directory", input),
   saveSettings: (input) =>
     ipcRenderer.invoke("bandi:save-desktop-settings", input),
+  getJevConnectionState: () =>
+    ipcRenderer.invoke("bandi:get-jev-connection-state"),
+  saveJevApiKey: (input) =>
+    ipcRenderer.invoke("bandi:save-jev-api-key", input),
+  evaluateMoodWithJev: (input) =>
+    ipcRenderer.invoke("bandi:evaluate-mood-with-jev", input),
   getDownloadServiceState: () =>
     ipcRenderer.invoke("bandi:get-download-service-state"),
   retryDownloadService: () =>

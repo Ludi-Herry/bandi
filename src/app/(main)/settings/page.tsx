@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   DownloadCloud,
   HardDrive,
+  KeyRound,
   Rss,
   SlidersHorizontal,
 } from "lucide-react";
@@ -11,6 +12,7 @@ import { sql } from "drizzle-orm";
 import { AutomationSettingsClient } from "@/components/features/AutomationSettingsClient";
 import { BackButton } from "@/components/features/BackButton";
 import { DesktopUpdateSettings } from "@/components/features/DesktopUpdateSettings";
+import { JevConnectionSettings } from "@/components/features/JevConnectionSettings";
 import { GlassPanel } from "@/components/ui";
 import { db } from "@/db";
 import { downloadQueue } from "@/db/schema";
@@ -28,7 +30,12 @@ export default async function SettingsPage() {
   const isLocalServer = process.env.ANIME_LOCAL_SERVER_APP === "1";
   const canManageUpdates = isDesktop || (isLocalServer && user.isLocalHost);
   const settingNav = canManageUpdates
-    ? [...SETTING_NAV_BASE, UPDATE_NAV_ITEM, DATA_NAV_ITEM]
+    ? [
+        ...SETTING_NAV_BASE,
+        ...(isDesktop ? [JEV_NAV_ITEM] : []),
+        UPDATE_NAV_ITEM,
+        DATA_NAV_ITEM,
+      ]
     : [...SETTING_NAV_BASE, DATA_NAV_ITEM];
 
   return (
@@ -67,6 +74,12 @@ export default async function SettingsPage() {
         </header>
 
         <AutomationSettingsClient />
+
+        {isDesktop && (
+          <section id="jev" className="scroll-mt-20">
+            <JevConnectionSettings />
+          </section>
+        )}
 
         {canManageUpdates && (
           <section id="app-update" className="scroll-mt-20">
@@ -125,6 +138,12 @@ const UPDATE_NAV_ITEM = {
   href: "#app-update",
   label: "应用更新",
   icon: <DownloadCloud size={14} />,
+};
+
+const JEV_NAV_ITEM = {
+  href: "#jev",
+  label: "Jev 选片",
+  icon: <KeyRound size={14} />,
 };
 
 const DATA_NAV_ITEM = {

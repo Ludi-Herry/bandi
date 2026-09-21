@@ -5,6 +5,7 @@ import { ArrowRight, HardDrive } from "lucide-react";
 import { AnimeCard } from "@/components/features/AnimeCard";
 import { AnimeDataRefreshButton } from "@/components/features/AnimeDataRefreshButton";
 import { AnimeLocalScanButton } from "@/components/features/CinemaScanButton";
+import { MoodPickerDialog } from "@/components/features/MoodPickerDialog";
 import { PageHeader } from "@/components/features/PageHeader";
 import { Button, GlassPanel } from "@/components/ui";
 import { useCardGlow } from "@/hooks/useCardGlow";
@@ -24,6 +25,7 @@ export function LocalLibraryClient({ items }: { items: LocalAnimeItem[] }) {
         description={`你保存在本地的动漫 · 可直接播放 · 共 ${items.length} 部`}
         actions={
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <MoodPickerDialog initialScope="anime" />
             <AnimeDataRefreshButton
               scope="local-library"
               label="刷新资料"

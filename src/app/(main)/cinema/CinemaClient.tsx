@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Clapperboard } from "lucide-react";
-import { GlassPanel } from "@/components/ui";
+import { Clapperboard, Search } from "lucide-react";
+import { ClearableInput, GlassPanel } from "@/components/ui";
 import { CinemaCard } from "@/components/features/CinemaCard";
 import {
   CinemaFollowUpSection,
@@ -12,8 +12,14 @@ import {
 } from "@/components/features/CinemaFollowUpSection";
 import { CinemaScanButton } from "@/components/features/CinemaScanButton";
 import { CinemaEnrichButton } from "@/components/features/CinemaEnrichButton";
+import { MoodPickerDialog } from "@/components/features/MoodPickerDialog";
 import { PageHeader } from "@/components/features/PageHeader";
 import { cn } from "@/lib/cn";
+import {
+  collectCinemaYears,
+  filterCinemaItems,
+  parseCinemaYearFilter,
+} from "@/lib/cinema-filters";
 import { useCardGlow } from "@/hooks/useCardGlow";
 import { useSlidingTabs } from "@/hooks/useSlidingTabs";
 import type { CinemaItem } from "@/lib/db-helpers/cinema";
@@ -115,6 +121,8 @@ export function CinemaClient({
   initialTab,
   initialGenre,
   initialKind,
+  initialQuery,
+  initialYear,
   todayUpdates,
   upcomingItems,
   continueItems,
@@ -127,6 +135,8 @@ export function CinemaClient({
   initialTab?: string;
   initialGenre?: string;
   initialKind?: string;
+  initialQuery?: string;
+  initialYear?: string;
   todayUpdates: CinemaUpdateView[];
   upcomingItems: CinemaUpdateView[];
   continueItems: CinemaContinueView[];
@@ -144,6 +154,10 @@ export function CinemaClient({
   const [adultKind, setAdultKind] = useState<AdultKind>(
     initialKind === "jav" || initialKind === "ova" ? initialKind : "all",
   );
+  const [query, setQuery] = useState(initialQuery ?? "");
+  const [year, setYear] = useState<number | null>(() =>
+    parseCinemaYearFilter(initialYear),
+  );
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -152,13 +166,16 @@ export function CinemaClient({
       if (genre !== ALL_MOVIES) params.set("genre", genre);
       if (genre === R_RATED && adultKind !== "all") params.set("kind", adultKind);
     }
+    const trimmedQuery = query.trim();
+    if (trimmedQuery) params.set("q", trimmedQuery);
+    if (year != null) params.set("year", String(year));
     const qs = params.toString();
     window.history.replaceState(
       window.history.state,
       "",
       qs ? `/cinema?${qs}` : "/cinema",
     );
-  }, [tab, genre, adultKind]);
+  }, [tab, genre, adultKind, query, year]);
 
   const counts: Record<TabKey, number> = {
     tv: drama.length,
@@ -190,11 +207,30 @@ export function CinemaClient({
           : movie.filter((m) => m.tags.includes(genre)),
     [adultItems, genre, isRRated, movie],
   );
+  const years = useMemo(
+    () => collectCinemaYears([...drama, ...movie, ...jav, ...ova]),
+    [drama, jav, movie, ova],
+  );
+  useEffect(() => {
+    if (year != null && !years.includes(year)) setYear(null);
+  }, [year, years]);
+  const filteredDrama = useMemo(
+    () => filterCinemaItems(drama, { query, year }),
+    [drama, query, year],
+  );
+  const filteredMovieItems = useMemo(
+    () => filterCinemaItems(movieItems, { query, year }),
+    [movieItems, query, year],
+  );
+  const hasActiveFilters = query.trim().length > 0 || year != null;
+  const visibleCount =
+    tab === "tv" ? filteredDrama.length : filteredMovieItems.length;
+  const activeCount = tab === "tv" ? drama.length : movieItems.length;
   const totalLocalItems = drama.length + movie.length + jav.length + ova.length;
   const hasLocalItems = totalLocalItems > 0;
-  const dramaGridRef = useCardGlow<HTMLDivElement>([drama, tab]);
+  const dramaGridRef = useCardGlow<HTMLDivElement>([filteredDrama, tab]);
   const movieGridRef = useCardGlow<HTMLDivElement>([
-    movieItems,
+    filteredMovieItems,
     tab,
     genre,
     adultKind,
@@ -215,6 +251,7 @@ export function CinemaClient({
         description={`你保存在本地的电视剧和电影 · 可直接播放 · 共 ${totalLocalItems} 部`}
         actions={
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <MoodPickerDialog initialScope="cinema" />
             {hasLocalItems && <CinemaEnrichButton scope="local" />}
             <CinemaScanButton />
           </div>
@@ -263,32 +300,95 @@ export function CinemaClient({
         })}
       </div>
 
+      {hasLocalItems && (
+        <div className="flex flex-col gap-2 rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] p-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1 sm:min-w-[280px]">
+            <ClearableInput
+              value={query}
+              onValueChange={setQuery}
+              placeholder="搜索片名或原名"
+              prefixIcon={<Search size={14} />}
+              spellCheck={false}
+              className="h-9 rounded-[6px] bg-[color:var(--bg-surface-hover)]"
+              inputClassName="text-[12px]"
+            />
+          </div>
+          <select
+            data-no-focus-ring
+            aria-label="按年份筛选本地影视"
+            value={year ?? ""}
+            onChange={(event) =>
+              setYear(
+                event.currentTarget.value
+                  ? Number(event.currentTarget.value)
+                  : null,
+              )
+            }
+            className="h-9 min-w-[112px] cursor-pointer appearance-none rounded-[6px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface-hover)] px-2.5 pr-7 text-[12px] text-[color:var(--text-primary)] outline-none transition-colors duration-150 hover:border-[color:var(--border-default)] focus:border-[color:var(--accent-muted)]"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='none' stroke='%23888' stroke-width='1.5' d='M1 1l4 4 4-4'/%3E%3C/svg%3E\")",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 10px center",
+            }}
+          >
+            <option value="">全部年份</option>
+            {years.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <span
+            className="shrink-0 text-[12px] text-[color:var(--text-muted)]"
+            data-tabular
+          >
+            {visibleCount} / {activeCount} 部
+          </span>
+          {hasActiveFilters && (
+            <FilterChip
+              active={false}
+              onClick={() => {
+                setQuery("");
+                setYear(null);
+              }}
+            >
+              重置
+            </FilterChip>
+          )}
+        </div>
+      )}
+
       {/* ===== 电视剧 ===== */}
       {tab === "tv" && (
         <>
-          <CinemaFollowUpSection
-            todayUpdates={todayUpdates}
-            upcomingItems={upcomingItems}
-            continueItems={continueItems}
-            missedItems={missedItems}
-          />
+          {!hasActiveFilters && (
+            <CinemaFollowUpSection
+              todayUpdates={todayUpdates}
+              upcomingItems={upcomingItems}
+              continueItems={continueItems}
+              missedItems={missedItems}
+            />
+          )}
           <section className="space-y-4">
             {drama.length > 0 && (
               <header>
                 <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[color:var(--text-primary)]">
-                  全部剧集
+                  {hasActiveFilters ? "筛选结果" : "全部剧集"}
                 </h2>
                 <p className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                  本地已有 {drama.length} 部，点开即可播放
+                  {hasActiveFilters
+                    ? `找到 ${filteredDrama.length} 部本地剧集`
+                    : `本地已有 ${drama.length} 部，点开即可播放`}
                 </p>
               </header>
             )}
-            {drama.length > 0 ? (
+            {filteredDrama.length > 0 ? (
               <div
                 ref={dramaGridRef}
                 className="grid grid-cols-2 gap-4 min-[640px]:grid-cols-3 md:grid-cols-4 xl:grid-cols-5"
               >
-                {drama.map((item, i) => (
+                {filteredDrama.map((item, i) => (
                   <CinemaCard
                     key={item.id}
                     item={item}
@@ -301,10 +401,12 @@ export function CinemaClient({
               <GlassPanel className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
                 <Clapperboard size={28} className="text-[color:var(--text-muted)]" />
                 <p className="text-[14px] font-medium text-[color:var(--text-primary)]">
-                  本地库还没有电视剧
+                  {hasActiveFilters ? "没有符合条件的电视剧" : "本地库还没有电视剧"}
                 </p>
                 <p className="max-w-[420px] text-[12px] leading-relaxed text-[color:var(--text-muted)]">
-                  点「扫描本地库」选你存放电视剧的文件夹，扫描入库后会出现在这里、可直接播放。
+                  {hasActiveFilters
+                    ? "调整片名或年份后再试。"
+                    : "点「扫描本地库」选你存放电视剧的文件夹，扫描入库后会出现在这里、可直接播放。"}
                 </p>
               </GlassPanel>
             )}
@@ -358,12 +460,12 @@ export function CinemaClient({
             </div>
           )}
 
-          {movieItems.length > 0 ? (
+          {filteredMovieItems.length > 0 ? (
             <div
               ref={movieGridRef}
               className="grid grid-cols-2 gap-4 min-[640px]:grid-cols-3 md:grid-cols-4 xl:grid-cols-5"
             >
-              {movieItems.map((item, i) => (
+              {filteredMovieItems.map((item, i) => (
                 <CinemaCard
                   key={item.id}
                   item={item}
@@ -377,14 +479,18 @@ export function CinemaClient({
             <GlassPanel className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
               <Clapperboard size={28} className="text-[color:var(--text-muted)]" />
               <p className="text-[14px] font-medium text-[color:var(--text-primary)]">
-                {isRRated
-                  ? "R级 还没有内容"
-                  : genre === ALL_MOVIES
-                    ? "本地库还没有电影"
-                    : `本地还没有「${genre}」题材的电影`}
+                {hasActiveFilters
+                  ? "没有符合条件的电影"
+                  : isRRated
+                    ? "R级 还没有内容"
+                    : genre === ALL_MOVIES
+                      ? "本地库还没有电影"
+                      : `本地还没有「${genre}」题材的电影`}
               </p>
               <p className="max-w-[420px] text-[12px] leading-relaxed text-[color:var(--text-muted)]">
-                点「扫描本地库」把本地电影扫描入库，会按题材自动归到对应 tab；成人内容归到 R级。
+                {hasActiveFilters
+                  ? "调整片名或年份后再试。"
+                  : "点「扫描本地库」把本地电影扫描入库，会按题材自动归到对应 tab；成人内容归到 R级。"}
               </p>
             </GlassPanel>
           )}
