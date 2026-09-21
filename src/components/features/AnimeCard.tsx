@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { AnimeCover } from "./AnimeCover";
 import { StatusBadge, type WatchStatus } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -21,6 +21,9 @@ interface AnimeCardProps {
   actions?: ReactNode;
   className?: string;
   href?: string;
+  /** Only the library grid participates in the native card-to-detail transition trial. */
+  libraryTransition?: boolean;
+  onNavigate?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 /**
@@ -43,6 +46,8 @@ export function AnimeCard({
   actions,
   className,
   href,
+  libraryTransition = false,
+  onNavigate,
 }: AnimeCardProps) {
   const cardHref = href ?? `/anime/${id}`;
   const episodesHref = `${cardHref.split("#")[0]}#episodes`;
@@ -59,6 +64,8 @@ export function AnimeCard({
   return (
     <div className="t-tilt group rounded-[8px]">
       <article
+        data-card-key={`anime:${id}`}
+        data-bandi-library-card={libraryTransition ? id : undefined}
         className={cn(
           "anime-card-glow t-tilt-card",
           "rounded-[8px] overflow-hidden",
@@ -71,6 +78,8 @@ export function AnimeCard({
         {/* Keep the glow host outside the anchor; Chrome can freeze conic-gradient angles inside link subtrees. */}
         <a
           href={cardHref}
+          data-bandi-card-link={libraryTransition ? "" : undefined}
+          onClick={onNavigate}
           aria-label={`查看 ${title}`}
           className="absolute inset-0 z-[8] rounded-[8px] touch-pan-y"
         >
@@ -79,7 +88,12 @@ export function AnimeCard({
 
         <div className="pointer-events-none">
           <div className="relative">
-            <AnimeCover src={coverUrl} alt={title} ratio="16/9" />
+            <AnimeCover
+              src={coverUrl}
+              alt={title}
+              ratio="16/9"
+              className={libraryTransition ? "bandi-library-cover" : undefined}
+            />
             <div
               aria-hidden
               className="absolute inset-0"
@@ -128,11 +142,11 @@ export function AnimeCard({
           </div>
 
           <div className="p-3">
-            <p className="text-[13px] font-semibold tracking-tight text-[color:var(--text-primary)] truncate">
+            <p className="min-h-[2.7em] line-clamp-2 text-[13px] font-semibold leading-[1.35] tracking-tight text-[color:var(--text-primary)]">
               {title}
             </p>
             {titleJa && (
-              <p className="mt-0.5 text-[11px] text-[color:var(--text-muted)] truncate">
+              <p className="mt-0.5 truncate text-[11px] text-[color:var(--text-secondary)]">
                 {titleJa}
               </p>
             )}

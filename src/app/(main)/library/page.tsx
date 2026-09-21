@@ -11,12 +11,25 @@ import {
 } from "@/lib/db-helpers/library";
 import { getMonthHours, getWeekDailyHours } from "@/lib/db-helpers/stats";
 import { getCurrentUser } from "@/lib/session";
+import { parseLibraryViewContext } from "@/lib/library-view-context";
 
 export const dynamic = "force-dynamic";
 
-export default async function LibraryPage() {
+export default async function LibraryPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const rawParams = await searchParams;
+  const viewParams = new URLSearchParams();
+  for (const key of ["status", "type", "year", "sort", "view"]) {
+    const value = rawParams[key];
+    if (typeof value === "string") viewParams.set(key, value);
+  }
+  const initialContext = parseLibraryViewContext(viewParams);
 
   const items = getLibrary(user.id);
   const stats = getLibraryStats(user.id);
@@ -171,7 +184,7 @@ export default async function LibraryPage() {
 
         {/* 右侧主区 */}
         <div className="order-1 min-w-0 lg:order-2 lg:col-span-9">
-          <LibraryClient items={items} />
+          <LibraryClient items={items} initialContext={initialContext} />
         </div>
       </section>
     </div>

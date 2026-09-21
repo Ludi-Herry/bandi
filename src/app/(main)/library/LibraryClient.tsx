@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Check, LayoutGrid, List as ListIcon, Trash2, X } from "lucide-react";
 import { AnimeCard } from "@/components/features/AnimeCard";
 import { AnimeRowItem } from "@/components/features/AnimeRowItem";
@@ -13,14 +13,23 @@ import { useCardGlow } from "@/hooks/useCardGlow";
 import { useSlidingTabs } from "@/hooks/useSlidingTabs";
 import type { WatchStatus } from "@/components/ui";
 import type { LibraryItem } from "@/lib/db-helpers/library";
+import {
+  LIBRARY_RETURN_PENDING_KEY,
+  LIBRARY_RETURN_SNAPSHOT_KEY,
+  LIBRARY_TRANSITION_ARM_KEY,
+  parseLibraryReturnSnapshot,
+  writeLibraryViewContext,
+  type LibraryViewContext,
+} from "@/lib/library-view-context";
 
 interface LibraryClientProps {
   items: LibraryItem[];
+  initialContext: LibraryViewContext;
 }
 
-type StatusTab = "all" | WatchStatus;
-type SortKey = "updated" | "rating" | "title" | "year";
-type ViewMode = "grid" | "list";
+type StatusTab = LibraryViewContext["status"];
+type SortKey = LibraryViewContext["sort"];
+type ViewMode = LibraryViewContext["view"];
 
 const STATUS_TABS: { value: StatusTab; label: string }[] = [
   { value: "all", label: "全部" },
@@ -38,15 +47,89 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "year", label: "年份" },
 ];
 
-export function LibraryClient({ items }: LibraryClientProps) {
+export function LibraryClient({ items, initialContext }: LibraryClientProps) {
   const router = useRouter();
-  const [statusTab, setStatusTab] = useState<StatusTab>("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [yearFilter, setYearFilter] = useState<string>("all");
-  const [sort, setSort] = useState<SortKey>("updated");
-  const [view, setView] = useState<ViewMode>("grid");
+  const shouldReduceMotion = useReducedMotion();
+  const [statusTab, setStatusTab] = useState<StatusTab>(initialContext.status);
+  const [typeFilter, setTypeFilter] = useState<string>(initialContext.type);
+  const [yearFilter, setYearFilter] = useState<string>(initialContext.year);
+  const [sort, setSort] = useState<SortKey>(initialContext.sort);
+  const [view, setView] = useState<ViewMode>(initialContext.view);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    let snapshot;
+    try {
+      const pending = sessionStorage.getItem(LIBRARY_RETURN_PENDING_KEY);
+      sessionStorage.removeItem(LIBRARY_RETURN_PENDING_KEY);
+      snapshot = parseLibraryReturnSnapshot(pending);
+    } catch {
+      return;
+    }
+    if (!snapshot) return;
+    if (JSON.stringify(snapshot.context) !== JSON.stringify(initialContext)) return;
+
+    let secondFrame: number | null = null;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        const scroller = document.querySelector<HTMLElement>(".desktop-page-scroll");
+        const card = document.querySelector<HTMLElement>(`[data-bandi-library-card="${snapshot.id}"]`);
+        const cover = card?.querySelector<HTMLElement>(".bandi-library-cover");
+        const offset = cover && snapshot.cardTop != null
+          ? cover.getBoundingClientRect().top - snapshot.cardTop
+          : null;
+        if (scroller) {
+          scroller.scrollTop = offset == null ? snapshot.scrollTop : scroller.scrollTop + offset;
+        } else {
+          window.scrollTo(0, offset == null ? snapshot.scrollTop : window.scrollY + offset);
+        }
+        if (snapshot.focus) {
+          card?.querySelector<HTMLElement>("a[data-bandi-card-link]")?.focus({ preventScroll: true });
+        }
+      });
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame != null) cancelAnimationFrame(secondFrame);
+    };
+  }, [initialContext]);
+
+  function rememberCardNavigation(event: MouseEvent<HTMLAnchorElement>, id: number) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const card = event.currentTarget.closest<HTMLElement>("[data-bandi-library-card]");
+    const cover = card?.querySelector<HTMLElement>(".bandi-library-cover");
+    const scroller = document.querySelector<HTMLElement>(".desktop-page-scroll");
+    const context: LibraryViewContext = {
+      status: statusTab,
+      type: typeFilter,
+      year: yearFilter,
+      sort,
+      view,
+    };
+    const snapshot = {
+      version: 1,
+      id,
+      context,
+      scrollTop: scroller?.scrollTop ?? window.scrollY,
+      cardTop: cover?.getBoundingClientRect().top ?? null,
+      focus: document.activeElement === event.currentTarget,
+      savedAt: Date.now(),
+    };
+    try {
+      sessionStorage.setItem(LIBRARY_RETURN_SNAPSHOT_KEY, JSON.stringify(snapshot));
+      sessionStorage.setItem(LIBRARY_TRANSITION_ARM_KEY, String(snapshot.savedAt));
+    } catch {
+      // Storage can be unavailable; the link must still navigate.
+    }
+    try {
+      const url = new URL(window.location.href);
+      url.search = writeLibraryViewContext(url.searchParams, context).toString();
+      window.history.replaceState(window.history.state, "", url);
+    } catch {
+      // The ordinary anchor remains authoritative if history is unavailable.
+    }
+  }
 
   const years = useMemo(() => {
     const s = new Set<number>();
@@ -259,11 +342,11 @@ export function LibraryClient({ items }: LibraryClientProps) {
       ) : view === "grid" ? (
         <motion.div
           ref={gridRef}
-          initial="hidden"
+          initial={shouldReduceMotion ? false : "hidden"}
           animate="visible"
           variants={{
             hidden: {},
-            visible: { transition: { staggerChildren: 0.04 } },
+            visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.04 } },
           }}
           className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2 xl:grid-cols-3"
         >
@@ -273,14 +356,16 @@ export function LibraryClient({ items }: LibraryClientProps) {
               <motion.div
                 key={it.anime.id}
                 variants={{
-                  hidden: { opacity: 0, y: 12 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+                  hidden: { opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : 12 },
+                  visible: { opacity: 1, y: 0, transition: { duration: shouldReduceMotion ? 0 : 0.35 } },
                 }}
                 className="relative"
               >
                 <div className={selectMode ? "pointer-events-none" : ""}>
                   <AnimeCard
                     id={it.anime.id}
+                    libraryTransition
+                    onNavigate={(event) => rememberCardNavigation(event, it.anime.id)}
                     title={it.anime.title}
                     titleJa={it.anime.titleJa}
                     coverUrl={it.anime.coverUrl}

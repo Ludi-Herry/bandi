@@ -4,6 +4,7 @@ import { Suspense, type CSSProperties } from "react";
 import { Calendar, Download, ExternalLink } from "lucide-react";
 import { GlassPanel, Tag } from "@/components/ui";
 import { AnimeCreditsTabs } from "@/components/features/AnimeCreditsTabs";
+import { AnimeCover } from "@/components/features/AnimeCover";
 import { AnimeCommunityRatingCard } from "@/components/features/AnimeCommunityRatingCard";
 import { AnimeSubscriptionButton } from "@/components/features/AnimeSubscriptionButton";
 import { AnimeDataRefreshButton } from "@/components/features/AnimeDataRefreshButton";
@@ -127,14 +128,15 @@ export default async function AnimeDetailPage({ params }: PageProps) {
     >
       {/* ========== Hero ========== */}
       <section className="relative min-h-[430px] w-full overflow-hidden sm:min-h-[460px] lg:h-[460px]">
-        {anime.coverUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={anime.coverUrl}
-            alt={anime.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        )}
+        <AnimeCover
+          src={anime.coverUrl}
+          alt=""
+          ratio="16/9"
+          priority
+          imageRole="original"
+          sizes="100vw"
+          className="bandi-detail-cover !absolute inset-0 h-full w-full"
+        />
         {/* 多层渐变遮罩，让左侧字够看 */}
         <div
           aria-hidden
@@ -166,7 +168,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
           <BackButton />
         </div>
 
-        <div className="app-page-container relative flex min-h-[430px] flex-col justify-end pb-8 pt-20 sm:min-h-[460px] sm:pb-10 lg:h-full lg:pb-12 lg:pt-16">
+        <div className="bandi-detail-copy app-page-container relative flex min-h-[430px] flex-col justify-end pb-8 pt-20 sm:min-h-[460px] sm:pb-10 lg:h-full lg:pb-12 lg:pt-16">
           <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[color:var(--text-secondary)]">
             <span data-tabular>{anime.year ?? "—"}</span>
             <span>·</span>
@@ -196,7 +198,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
           )}
 
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <span className="text-[12px] text-[color:var(--text-muted)]">
+            <span className="text-[12px] text-[color:var(--text-secondary)]">
               {totalLabel}
               {userAnime && (
                 <>

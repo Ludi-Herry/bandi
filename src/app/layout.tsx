@@ -6,6 +6,7 @@ import { AppVersionNotice } from "@/components/features/AppVersionNotice";
 import { DesktopUpdateNotice } from "@/components/features/DesktopUpdateNotice";
 import { getAppBuildIdentity } from "@/lib/app-build";
 import { getUserTheme } from "@/lib/theme";
+import { libraryDetailTransitionScript } from "@/lib/library-detail-transition";
 import "./globals.css";
 
 const inter = Inter({
@@ -60,6 +61,9 @@ export default async function RootLayout({
       className={`${inter.variable} ${notoSansSC.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: libraryDetailTransitionScript }} />
+      </head>
       <body className="noise antialiased" suppressHydrationWarning>
         <ThemeSync initialTheme={theme} />
         <AppVersionNotice initialBuildId={buildIdentity.buildId} />
