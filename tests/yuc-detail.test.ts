@@ -175,7 +175,7 @@ test("YUC external links reject executable, credentialed, local and forged sourc
   );
 });
 
-test("YUC info panel keeps the required facts, attribution and hardened external links", () => {
+test("merged anime info panel keeps YUC facts, attribution and hardened external links", () => {
   const source = readFileSync(
     new URL("../src/components/features/YucAnimeInfo.tsx", import.meta.url),
     "utf8",
@@ -183,7 +183,7 @@ test("YUC info panel keeps the required facts, attribution and hardened external
   for (const label of [
     "每周播出",
     "开播日期",
-    "总话数",
+    "集数",
     "正版播放",
     "声优",
     "制作公司",
@@ -196,4 +196,8 @@ test("YUC info panel keeps the required facts, attribution and hardened external
   }
   assert.match(source, /sanitizeYucExternalUrl\(provider\.url\)/u);
   assert.match(source, /rel="noopener noreferrer"/u);
+  assert.match(source, /作品资料/u);
+  assert.match(source, /原名/u);
+  assert.match(source, /类型/u);
+  assert.match(source, /状态/u);
 });

@@ -24,6 +24,7 @@ import { getSubjectRelations } from "@/lib/bangumi";
 import { selectRelatedResourceViews } from "@/lib/bangumi-relations";
 import { selectContinueEpisode } from "@/lib/continue-watching";
 import { getAnimeDetail } from "@/lib/db-helpers/library";
+import type { Anime } from "@/db/schema";
 import { getCurrentUser } from "@/lib/session";
 import {
   getCompletionEpisodeNumber,
@@ -356,46 +357,8 @@ export default async function AnimeDetailPage({ params }: PageProps) {
             />
           </GlassPanel>
 
-          <GlassPanel className="p-5">
-            <h3 className="text-[14px] font-semibold tracking-tight text-[color:var(--text-primary)] mb-3">
-              基本信息
-            </h3>
-            <dl className="text-[12px] space-y-2">
-              {[
-                ["原名", anime.titleJa ?? "—"],
-                ["类型", TYPE_LABEL[anime.type] ?? anime.type],
-                ["状态", STATUS_LABEL[anime.status] ?? anime.status],
-                ["集数", anime.totalEpisodes ? `${anime.totalEpisodes} 集` : "—"],
-                [
-                  "首播",
-                  anime.year
-                    ? `${anime.year}${anime.season ? " 年" : ""}`
-                    : "—",
-                ],
-                [
-                  "更新时间",
-                  anime.airingDay !== null && anime.airingDay !== undefined
-                    ? `${WEEKDAYS[anime.airingDay]}${anime.airingTime ? ` ${anime.airingTime}` : ""}`
-                    : "—",
-                ],
-              ].map(([k, v]) => (
-                <div
-                  key={k}
-                  className="flex items-baseline justify-between gap-3"
-                >
-                  <dt className="text-[color:var(--text-muted)] shrink-0">
-                    {k}
-                  </dt>
-                  <dd className="text-[color:var(--text-primary)] text-right truncate">
-                    {v}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </GlassPanel>
-
-          <Suspense fallback={<YucInfoSkeleton />}>
-            <AsyncYucInfo matchPromise={yucMatchPromise} />
+          <Suspense fallback={<YucAnimeInfo anime={anime} match={null} />}>
+            <AsyncYucInfo anime={anime} matchPromise={yucMatchPromise} />
           </Suspense>
 
           <Suspense fallback={<RelatedResourcesSkeleton />}>
@@ -455,28 +418,13 @@ async function AsyncYucHeroLink({
 }
 
 async function AsyncYucInfo({
+  anime,
   matchPromise,
 }: {
+  anime: Anime;
   matchPromise: Promise<YucDetailMatch | null>;
 }) {
-  const match = await matchPromise;
-  return match ? <YucAnimeInfo match={match} /> : null;
-}
-
-function YucInfoSkeleton() {
-  return (
-    <GlassPanel className="p-5" aria-label="长门番堂情报加载中" aria-busy="true">
-      <div className="space-y-2">
-        <SkeletonBlock className="h-4 w-24" />
-        <SkeletonBlock className="h-3 w-48 max-w-full" />
-      </div>
-      <div className="mt-4 space-y-2">
-        {[0, 1, 2].map((item) => (
-          <SkeletonBlock key={item} className="h-3 w-full" />
-        ))}
-      </div>
-    </GlassPanel>
-  );
+  return <YucAnimeInfo anime={anime} match={await matchPromise} />;
 }
 
 async function AsyncRelatedResourcesPanel({
