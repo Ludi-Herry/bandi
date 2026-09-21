@@ -6,6 +6,8 @@
  *  3. If still no hit: keep Japanese, mark tag `needs_translation`
  */
 
+import { unstable_cache } from "next/cache";
+
 const ENDPOINT = "https://graphql.anilist.co";
 
 export interface AniMedia {
@@ -22,6 +24,18 @@ export interface AniMedia {
   description: string | null;
   status: string | null;
   format: string | null;
+  averageScore: number | null;
+  meanScore: number | null;
+  popularity: number | null;
+  siteUrl: string | null;
+}
+
+export interface AniMediaRating {
+  id: number;
+  averageScore: number | null;
+  meanScore: number | null;
+  popularity: number | null;
+  siteUrl: string | null;
 }
 
 const QUERY = /* GraphQL */ `
@@ -36,6 +50,10 @@ const QUERY = /* GraphQL */ `
       description(asHtml: false)
       status
       format
+      averageScore
+      meanScore
+      popularity
+      siteUrl
     }
   }
 `;
@@ -66,6 +84,49 @@ export async function getMediaByRomajiTitle(
     return null;
   }
 }
+
+const RATING_QUERY = /* GraphQL */ `
+  query ($id: Int!) {
+    Media(id: $id, type: ANIME) {
+      id
+      averageScore
+      meanScore
+      popularity
+      siteUrl
+    }
+  }
+`;
+
+async function fetchMediaRatingById(
+  id: number,
+): Promise<(AniMediaRating & { fetchedAt: string }) | null> {
+  if (!Number.isInteger(id) || id <= 0) return null;
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ query: RATING_QUERY, variables: { id } }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      data?: { Media?: AniMediaRating | null };
+    };
+    const media = json.data?.Media;
+    return media ? { ...media, fetchedAt: new Date().toISOString() } : null;
+  } catch {
+    return null;
+  }
+}
+
+export const getMediaRatingById = unstable_cache(
+  fetchMediaRatingById,
+  ["anilist-media-rating-v1"],
+  { revalidate: 6 * 60 * 60 },
+);
 
 /* ─────────── seasonal browse ─────────── */
 

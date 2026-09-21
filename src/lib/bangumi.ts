@@ -91,7 +91,7 @@ export interface BgmSubject {
   images?: BgmImages;
   total_episodes?: number;
   eps?: number;
-  rating?: { score?: number; total?: number };
+  rating?: { score?: number; total?: number; rank?: number };
   tags?: Array<{ name: string; count: number }>;
   infobox?: Array<{
     key: string;
@@ -254,6 +254,30 @@ async function bgmFetch<T>(
 export function getSubject(id: number): Promise<BgmSubject | null> {
   return bgmFetch<BgmSubject>(`/v0/subjects/${id}`);
 }
+
+export const getSubjectRating = unstable_cache(
+  async (id: number) => {
+    if (!Number.isInteger(id) || id <= 0) return null;
+    const subject = await getSubject(id);
+    const rating = subject?.rating;
+    const score = rating?.score;
+    if (!rating || typeof score !== "number" || score <= 0) return null;
+    return {
+      score,
+      total:
+        typeof rating.total === "number"
+          ? rating.total
+          : null,
+      rank:
+        typeof rating.rank === "number" && rating.rank > 0
+          ? rating.rank
+          : null,
+      fetchedAt: new Date().toISOString(),
+    };
+  },
+  ["bangumi-subject-rating-v1"],
+  { revalidate: 6 * 60 * 60 },
+);
 
 /** GET /v0/episodes?subject_id=... */
 export async function getEpisodes(

@@ -4,6 +4,7 @@ import { Suspense, type CSSProperties } from "react";
 import { Calendar, Download, ExternalLink } from "lucide-react";
 import { GlassPanel, Tag } from "@/components/ui";
 import { AnimeCreditsTabs } from "@/components/features/AnimeCreditsTabs";
+import { AnimeCommunityRatingCard } from "@/components/features/AnimeCommunityRatingCard";
 import { AnimeSubscriptionButton } from "@/components/features/AnimeSubscriptionButton";
 import { AnimeDataRefreshButton } from "@/components/features/AnimeDataRefreshButton";
 import { BackButton } from "@/components/features/BackButton";
@@ -15,6 +16,10 @@ import { RelatedResourcesPanel } from "@/components/features/RelatedResourcesPan
 import { WatchStatusMenu } from "@/components/features/WatchStatusMenu";
 import { YucAnimeInfo } from "@/components/features/YucAnimeInfo";
 import { deriveAnimeVisualVars } from "@/lib/anime-visuals";
+import {
+  getAnimeCommunityRatings,
+  type AnimeCommunityRatings,
+} from "@/lib/anime-community-ratings";
 import { getSubjectRelations } from "@/lib/bangumi";
 import { selectRelatedResourceViews } from "@/lib/bangumi-relations";
 import { selectContinueEpisode } from "@/lib/continue-watching";
@@ -74,6 +79,13 @@ export default async function AnimeDetailPage({ params }: PageProps) {
     totalDownloads,
   } = detail;
   const yucMatchPromise = getYucDetailMatch(anime);
+  const communityRatingsPromise = getAnimeCommunityRatings({
+    bangumiId: anime.bangumiId,
+    anilistId: anime.anilistId,
+    title: anime.title,
+    titleJa: anime.titleJa,
+    year: anime.year,
+  });
   const visualVars = deriveAnimeVisualVars(anime.accentColor);
 
   const watchedCount = userAnime?.currentEpisode ?? 0;
@@ -330,6 +342,10 @@ export default async function AnimeDetailPage({ params }: PageProps) {
 
         {/* 右栏 */}
         <aside className="min-w-0 space-y-4 xl:col-span-4">
+          <Suspense fallback={<CommunityRatingsSkeleton />}>
+            <AsyncCommunityRatings ratingsPromise={communityRatingsPromise} />
+          </Suspense>
+
           <GlassPanel className="p-5">
             <RatingNotes
               animeId={anime.id}
@@ -391,6 +407,30 @@ export default async function AnimeDetailPage({ params }: PageProps) {
         </aside>
       </section>
     </div>
+  );
+}
+
+async function AsyncCommunityRatings({
+  ratingsPromise,
+}: {
+  ratingsPromise: Promise<AnimeCommunityRatings>;
+}) {
+  return <AnimeCommunityRatingCard ratings={await ratingsPromise} />;
+}
+
+function CommunityRatingsSkeleton() {
+  return (
+    <GlassPanel className="p-5" aria-label="社区评分加载中" aria-busy="true">
+      <div className="space-y-2">
+        <SkeletonBlock className="h-4 w-20" />
+        <SkeletonBlock className="h-3 w-48 max-w-full" />
+      </div>
+      <div className="mt-4 space-y-2">
+        {[0, 1].map((item) => (
+          <SkeletonBlock key={item} className="h-[58px] w-full" />
+        ))}
+      </div>
+    </GlassPanel>
   );
 }
 
