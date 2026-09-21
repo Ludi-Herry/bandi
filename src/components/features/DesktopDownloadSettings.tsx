@@ -200,8 +200,6 @@ export function DesktopDownloadSettings() {
                   setSaved(false);
                 }}
                 aria-label="关闭窗口后继续下载"
-                className="relative h-6 w-11 shrink-0 rounded-full border border-[color:var(--border-default)] bg-[color:var(--bg-surface-hover)] p-1 [--toggle-travel:20px] focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-[color:var(--accent)] data-[state=checked]:border-[color:var(--accent)] data-[state=checked]:bg-[color:var(--accent)]"
-                thumbClassName="block h-4 w-4 rounded-full bg-[color:var(--text-primary)] shadow-sm"
               />
               <Button
                 variant="primary"
@@ -248,8 +246,6 @@ export function DesktopDownloadSettings() {
                 setSaved(false);
               }}
               aria-label="允许局域网设备访问"
-              className="relative h-6 w-11 shrink-0 rounded-full border border-[color:var(--border-default)] bg-[color:var(--bg-surface-hover)] p-1 [--toggle-travel:20px] after:absolute after:inset-x-0 after:-inset-y-2.5 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-[color:var(--accent)] data-[state=checked]:border-[color:var(--accent)] data-[state=checked]:bg-[color:var(--accent)]"
-              thumbClassName="block h-4 w-4 rounded-full bg-[color:var(--text-primary)] shadow-sm"
             />
           </div>
 

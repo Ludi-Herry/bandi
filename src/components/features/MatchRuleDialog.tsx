@@ -221,13 +221,6 @@ export function MatchRuleDialog({
                 onCheckedChange={(v) =>
                   setDraft((d) => ({ ...d, isActive: v }))
                 }
-                className={cn(
-                  "relative h-6 w-10 rounded-full p-1 [--toggle-travel:16px]",
-                  "data-[state=checked]:bg-[color:var(--accent)]",
-                  "data-[state=unchecked]:bg-[color:var(--bg-surface-hover)]",
-                  "border border-[color:var(--border-default)]",
-                )}
-                thumbClassName="block h-4 w-4 rounded-full bg-[color:var(--text-primary)]"
               />
             </div>
           </div>

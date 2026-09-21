@@ -62,7 +62,6 @@ test("transition utilities expose the selected motion recipes", () => {
   assert.match(globalsSource, /--like-pop/);
   assert.match(globalsSource, /--learn-shift/);
   assert.match(globalsSource, /--reel-dur/);
-  assert.match(globalsSource, /--toggle-dur/);
   assert.match(globalsSource, /@keyframes t-shimmer/);
   assert.match(globalsSource, /\.t-resize/);
   assert.match(globalsSource, /\.t-page-slide/);
@@ -71,7 +70,6 @@ test("transition utilities expose the selected motion recipes", () => {
   assert.match(globalsSource, /\.t-like\[data-liked="true"\]/);
   assert.match(globalsSource, /\.t-learn:hover \.t-learn-chevron/);
   assert.match(globalsSource, /\.t-reel-strip/);
-  assert.match(globalsSource, /\.t-toggle-thumb/);
   assert.match(globalsSource, /\.t-badge\s*\{[^}]*display:\s*inline-flex/);
   assert.match(globalsSource, /\.t-badge\s*\{[^}]*height:\s*16px/);
   assert.match(globalsSource, /\.t-badge\s*\{[^}]*line-height:\s*1/);
@@ -99,15 +97,22 @@ test("toast remains mounted for its exit transition", () => {
   assert.doesNotMatch(globalsSource, /@keyframes toast-slide-in/);
 });
 
-test("settings and player switches share the spring toggle recipe", () => {
-  assert.match(motionSwitchSource, /data-on=\{checked \? "true" : "false"\}/);
-  assert.match(motionSwitchSource, /initialized && "is-init"/);
+test("settings and player switches share centered shadcn-style geometry", () => {
+  assert.match(motionSwitchSource, /data-slot="switch"/);
+  assert.match(motionSwitchSource, /inline-flex shrink-0 items-center/);
+  assert.match(motionSwitchSource, /h-\[22px\] w-10/);
+  assert.match(motionSwitchSource, /size-\[18px\] data-\[state=checked\]:translate-x-5/);
+  assert.match(motionSwitchSource, /h-\[18px\] w-8/);
+  assert.match(motionSwitchSource, /size-3\.5 data-\[state=checked\]:translate-x-4/);
+  assert.match(motionSwitchSource, /motion-reduce:transition-none/);
+  assert.doesNotMatch(motionSwitchSource, /useEffect|useState|data-on=/);
   assert.equal(
     (switchConsumerSources.match(/<MotionSwitch/g) ?? []).length,
     6,
   );
   assert.doesNotMatch(switchConsumerSources, /<Switch\.Root/);
   assert.doesNotMatch(switchConsumerSources, /<Switch\.Thumb/);
+  assert.doesNotMatch(switchConsumerSources, /--toggle-travel|thumbClassName/);
 });
 
 test("subscription and static links use restrained confirmation motion", () => {

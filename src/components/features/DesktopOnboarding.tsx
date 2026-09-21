@@ -266,8 +266,6 @@ export function DesktopOnboarding() {
                 checked={closeToTray}
                 onCheckedChange={setCloseToTray}
                 aria-label="关闭窗口后继续下载"
-                className="relative h-6 w-11 shrink-0 rounded-full border border-[color:var(--border-default)] bg-[color:var(--bg-surface-hover)] p-1 [--toggle-travel:20px] data-[state=checked]:border-[color:var(--accent)] data-[state=checked]:bg-[color:var(--accent)]"
-                thumbClassName="block h-4 w-4 rounded-full bg-[color:var(--text-primary)] shadow-sm"
               />
             </div>
           </GlassPanel>

@@ -1370,13 +1370,8 @@ export function PlayerClient({
                       <MotionSwitch
                         checked={autoPlayEnabled}
                         onCheckedChange={setAutoPlayEnabled}
-                        className={cn(
-                          "h-5 w-9 rounded-full p-0.5 [--toggle-travel:16px]",
-                          autoPlayEnabled
-                            ? "bg-[color:var(--accent)]"
-                            : "bg-white/16",
-                        )}
-                        thumbClassName="block h-4 w-4 rounded-full bg-white"
+                        size="sm"
+                        className="data-[state=unchecked]:border-white/10 data-[state=unchecked]:bg-white/16"
                         aria-label="自动连播"
                       />
                     </div>
