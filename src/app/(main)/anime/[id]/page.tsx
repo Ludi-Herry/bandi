@@ -25,6 +25,7 @@ import { getSubjectRelations } from "@/lib/bangumi";
 import { selectRelatedResourceViews } from "@/lib/bangumi-relations";
 import { selectContinueEpisode } from "@/lib/continue-watching";
 import { getAnimeDetail } from "@/lib/db-helpers/library";
+import { getJikanRatingByMalId } from "@/lib/jikan";
 import type { Anime } from "@/db/schema";
 import { getCurrentUser } from "@/lib/session";
 import {
@@ -87,6 +88,9 @@ export default async function AnimeDetailPage({ params }: PageProps) {
     title: anime.title,
     titleJa: anime.titleJa,
     year: anime.year,
+    doubanId: anime.doubanId,
+    doubanRating: anime.doubanRating,
+    doubanRatingFetchedAt: anime.doubanRatingFetchedAt,
   });
   const visualVars = deriveAnimeVisualVars(anime.accentColor);
 
@@ -380,7 +384,26 @@ async function AsyncCommunityRatings({
 }: {
   ratingsPromise: Promise<AnimeCommunityRatings>;
 }) {
-  return <AnimeCommunityRatingCard ratings={await ratingsPromise} />;
+  const ratings = await ratingsPromise;
+  const malRatingPromise = ratings.malId
+    ? getJikanRatingByMalId(ratings.malId).catch(() => null)
+    : null;
+  if (!ratings.bangumi && !ratings.anilist && !ratings.douban && malRatingPromise) {
+    const malRating = await malRatingPromise;
+    if (!malRating) return null;
+    return (
+      <AnimeCommunityRatingCard
+        ratings={ratings}
+        malRatingPromise={Promise.resolve(malRating)}
+      />
+    );
+  }
+  return (
+    <AnimeCommunityRatingCard
+      ratings={ratings}
+      malRatingPromise={malRatingPromise}
+    />
+  );
 }
 
 function CommunityRatingsSkeleton() {

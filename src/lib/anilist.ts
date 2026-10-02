@@ -12,6 +12,7 @@ const ENDPOINT = "https://graphql.anilist.co";
 
 export interface AniMedia {
   id: number;
+  idMal?: number | null;
   title: {
     romaji: string;
     native: string;
@@ -32,6 +33,7 @@ export interface AniMedia {
 
 export interface AniMediaRating {
   id: number;
+  idMal: number | null;
   averageScore: number | null;
   meanScore: number | null;
   popularity: number | null;
@@ -42,6 +44,7 @@ const QUERY = /* GraphQL */ `
   query ($search: String!) {
     Media(search: $search, type: ANIME, sort: SEARCH_MATCH) {
       id
+      idMal
       title { romaji native english }
       episodes
       seasonYear
@@ -89,6 +92,7 @@ const RATING_QUERY = /* GraphQL */ `
   query ($id: Int!) {
     Media(id: $id, type: ANIME) {
       id
+      idMal
       averageScore
       meanScore
       popularity
@@ -124,7 +128,7 @@ async function fetchMediaRatingById(
 
 export const getMediaRatingById = unstable_cache(
   fetchMediaRatingById,
-  ["anilist-media-rating-v1"],
+  ["anilist-media-rating-v2"],
   { revalidate: 6 * 60 * 60 },
 );
 

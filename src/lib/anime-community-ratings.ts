@@ -23,6 +23,13 @@ export interface AnimeCommunityRatings {
     fetchedAt: string;
     href: string;
   } | null;
+  /** AniList's cross-reference, used only for an exact-ID Jikan lookup. */
+  malId: number | null;
+  douban: {
+    score: number;
+    fetchedAt: string | null;
+    href: string;
+  } | null;
 }
 
 export async function getAnimeCommunityRatings({
@@ -31,12 +38,18 @@ export async function getAnimeCommunityRatings({
   title,
   titleJa,
   year,
+  doubanId,
+  doubanRating,
+  doubanRatingFetchedAt,
 }: {
   bangumiId: number | null;
   anilistId: number | null;
   title: string;
   titleJa: string | null;
   year: number | null;
+  doubanId: string | null;
+  doubanRating: number | null;
+  doubanRatingFetchedAt: Date | null;
 }): Promise<AnimeCommunityRatings> {
   const [bangumi, anilist] = await Promise.all([
     bangumiId ? getSubjectRating(bangumiId) : Promise.resolve(null),
@@ -44,6 +57,7 @@ export async function getAnimeCommunityRatings({
       ? getMediaRatingById(anilistId)
       : getAniListRatingByIdentity(title, titleJa, year),
   ]);
+  const mappedMalId = anilist?.idMal;
 
   return {
     bangumi:
@@ -63,6 +77,25 @@ export async function getAnimeCommunityRatings({
             href: anilist.siteUrl || `https://anilist.co/anime/${anilist.id}`,
           }
         : null,
+    malId:
+      typeof mappedMalId === "number" &&
+      Number.isSafeInteger(mappedMalId) &&
+      mappedMalId > 0
+        ? mappedMalId
+        : null,
+    douban:
+      doubanId &&
+      /^\d+$/.test(doubanId) &&
+      doubanRating != null &&
+      Number.isFinite(doubanRating) &&
+      doubanRating > 0 &&
+      doubanRating <= 10
+        ? {
+            score: doubanRating,
+            fetchedAt: doubanRatingFetchedAt?.toISOString() ?? null,
+            href: `https://movie.douban.com/subject/${encodeURIComponent(doubanId)}/`,
+          }
+        : null,
   };
 }
 
@@ -79,6 +112,7 @@ const getAniListRatingByIdentity = unstable_cache(
       return media
         ? {
             id: media.id,
+            idMal: media.idMal ?? null,
             averageScore: media.averageScore,
             meanScore: media.meanScore,
             popularity: media.popularity,
@@ -89,6 +123,6 @@ const getAniListRatingByIdentity = unstable_cache(
     }
     return null;
   },
-  ["anilist-rating-identity-v1"],
+  ["anilist-rating-identity-v2"],
   { revalidate: 6 * 60 * 60 },
 );
