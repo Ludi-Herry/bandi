@@ -66,9 +66,12 @@ export function JevConnectionSettings() {
         <div className="min-w-0">
           <h2 className="text-[16px] font-semibold text-[color:var(--text-primary)]">
             Jev 选片连接
+            <span className="ml-2 align-middle text-[11px] font-medium text-[color:var(--text-muted)]">
+              可选
+            </span>
           </h2>
           <p className="mt-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
-            Bandi 主进程直接连接 TypeSafe，不需要安装或选择 Jev Lab。
+            不填也能按心情选片：Bandi 会在本机挑出 8 部。填写 TypeSafe API Key 后，可以再让 Jev 把这 8 部按合不合适分组。
           </p>
         </div>
       </header>

@@ -76,6 +76,8 @@ export function MoodPickerDialog({
   const [jevConnection, setJevConnection] =
     useState<DesktopJevConnectionState | null>(null);
   const requestIdRef = useRef(0);
+  // Jev grouping is an optional extra: without a saved key the local picks are the whole feature
+  const jevEnabled = jevConnection?.configured === true;
 
   useEffect(() => {
     if (!open) return;
@@ -225,7 +227,9 @@ export function MoodPickerDialog({
                 按心情选片
               </Dialog.Title>
               <Dialog.Description className="mt-1 text-[12px] leading-relaxed text-[color:var(--text-secondary)]">
-                说说你现在想看什么感觉。我们会先挑出 8 部给你确认，只有点“开始 Jev 判断”后才会发送片名和简介。
+                {jevEnabled
+                  ? "说说你现在想看什么感觉。Bandi 先在本机挑出 8 部，点“开始 Jev 判断”后才会发送片名和简介。"
+                  : "说说你现在想看什么感觉，Bandi 会按标签和简介从你的片库里挑出最贴近的 8 部，全程在本机完成。"}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -263,7 +267,7 @@ export function MoodPickerDialog({
                     </button>
                   ))}
                 </div>
-                {(pool === "tracked" || pool === "all") && (
+                {jevEnabled && (pool === "tracked" || pool === "all") && (
                   <p className="mt-2 text-[11px] leading-relaxed text-[color:var(--status-warning)]">
                     预览仍只在本机运行；若以后发送候选，这个范围可能间接反映你的收藏兴趣。
                   </p>
@@ -354,10 +358,10 @@ export function MoodPickerDialog({
                     )
                   }
                 >
-                  {loading ? "正在本地筛选…" : "预览候选"}
+                  {loading ? "正在本地筛选…" : "挑 8 部"}
                 </Button>
                 <span className="text-[11px] text-[color:var(--text-muted)]">
-                  当前步骤不会调用 Jev
+                  只在本机筛选，不联网
                 </span>
               </div>
             </section>
@@ -384,50 +388,54 @@ export function MoodPickerDialog({
                       资料不足 {preview.counts.insufficient} 部
                     </p>
                   </div>
-                  <Tag variant="accent">
-                    {evaluation ? "已由 Jev 分组" : "尚未发送给 Jev"}
-                  </Tag>
+                  {jevEnabled && (
+                    <Tag variant="accent">
+                      {evaluation ? "已由 Jev 分组" : "尚未发送给 Jev"}
+                    </Tag>
+                  )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] px-3 py-2.5">
-                  <Button
-                    size="sm"
-                    onClick={evaluateWithJev}
-                    disabled={
-                      pool !== "local" ||
-                      preview.candidates.length === 0 ||
-                      evaluating ||
-                      jevConnection?.status !== "ready"
-                    }
-                    leftIcon={
-                      evaluating ? (
-                        <Loader2 size={13} className="animate-spin" />
+                {jevEnabled && (
+                  <div className="flex flex-wrap items-center gap-3 rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] px-3 py-2.5">
+                    <Button
+                      size="sm"
+                      onClick={evaluateWithJev}
+                      disabled={
+                        pool !== "local" ||
+                        preview.candidates.length === 0 ||
+                        evaluating ||
+                        jevConnection?.status !== "ready"
+                      }
+                      leftIcon={
+                        evaluating ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Sparkles size={13} />
+                        )
+                      }
+                    >
+                      {evaluating ? "Jev 判断中…" : "开始 Jev 判断"}
+                    </Button>
+                    <span className="text-[11px] leading-relaxed text-[color:var(--text-muted)]">
+                      {pool !== "local" ? (
+                        "当前外发授权仅覆盖“本地可播”候选。"
+                      ) : jevConnection?.status === "ready" ? (
+                        "Bandi 仅在本次点击时直连 TypeSafe；失败不会自动重试。"
                       ) : (
-                        <Sparkles size={13} />
-                      )
-                    }
-                  >
-                    {evaluating ? "Jev 判断中…" : "开始 Jev 判断"}
-                  </Button>
-                  <span className="text-[11px] leading-relaxed text-[color:var(--text-muted)]">
-                    {pool !== "local" ? (
-                      "当前外发授权仅覆盖“本地可播”候选。"
-                    ) : jevConnection?.status === "ready" ? (
-                      "Bandi 仅在本次点击时直连 TypeSafe；失败不会自动重试。"
-                    ) : (
-                      <>
-                        请先到
-                        <a
-                          href="/settings#jev"
-                          className="mx-1 text-[color:var(--accent)] hover:underline"
-                        >
-                          设置中心
-                        </a>
-                        安全保存 TypeSafe API Key。
-                      </>
-                    )}
-                  </span>
-                </div>
+                        <>
+                          请先到
+                          <a
+                            href="/settings#jev"
+                            className="mx-1 text-[color:var(--accent)] hover:underline"
+                          >
+                            设置中心
+                          </a>
+                          安全保存 TypeSafe API Key。
+                        </>
+                      )}
+                    </span>
+                  </div>
+                )}
 
                 {evaluation && (
                   <div className="space-y-2 rounded-[8px] border border-[color:var(--accent-muted)] bg-[color:var(--accent-subtle)] p-3">
@@ -505,7 +513,7 @@ export function MoodPickerDialog({
                             </div>
                             <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-[color:var(--text-secondary)]">
                               {candidate.synopsis?.trim() ||
-                                "现有文字资料不足，Jev 应返回资料不足。"}
+                                "暂无简介"}
                             </p>
                           </div>
                         </a>
@@ -518,48 +526,50 @@ export function MoodPickerDialog({
                   </div>
                 )}
 
-                <details className="rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]">
-                  <summary className="cursor-pointer list-none px-3 py-2.5 text-[12px] font-medium text-[color:var(--text-primary)]">
-                    查看未来会发送什么
-                  </summary>
-                  <div className="border-t border-[color:var(--border-subtle)] px-3 py-3 text-[11px] leading-relaxed text-[color:var(--text-secondary)]">
-                    <div className="flex items-start gap-2">
-                      <ShieldCheck
-                        size={14}
-                        className="mt-0.5 shrink-0 text-[color:var(--status-success)]"
-                      />
-                      <div>
-                        <p>
-                          发送：{preview.outboundPreview.sentFields.join("、")}。
-                        </p>
-                        <p className="mt-1">
-                          留在本机：{preview.outboundPreview.keptLocal.join("、")}。
-                        </p>
-                        <p className="mt-1">
-                          点击后由 Bandi 主进程直连 TypeSafe；API Key 只作为授权头使用，不进入 Jev 的判断文字。
-                        </p>
+                {jevEnabled && (
+                  <details className="rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)]">
+                    <summary className="cursor-pointer list-none px-3 py-2.5 text-[12px] font-medium text-[color:var(--text-primary)]">
+                      查看未来会发送什么
+                    </summary>
+                    <div className="border-t border-[color:var(--border-subtle)] px-3 py-3 text-[11px] leading-relaxed text-[color:var(--text-secondary)]">
+                      <div className="flex items-start gap-2">
+                        <ShieldCheck
+                          size={14}
+                          className="mt-0.5 shrink-0 text-[color:var(--status-success)]"
+                        />
+                        <div>
+                          <p>
+                            发送：{preview.outboundPreview.sentFields.join("、")}。
+                          </p>
+                          <p className="mt-1">
+                            留在本机：{preview.outboundPreview.keptLocal.join("、")}。
+                          </p>
+                          <p className="mt-1">
+                            点击后由 Bandi 主进程直连 TypeSafe；API Key 只作为授权头使用，不进入 Jev 的判断文字。
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {preview.outboundPreview.state.candidates
+                          .filter((candidate) => candidate.title)
+                          .map((candidate) => (
+                            <div
+                              key={candidate.candidate_id}
+                              className="rounded-[6px] bg-[color:var(--bg-surface-hover)] px-2.5 py-2"
+                            >
+                              <div className="font-medium text-[color:var(--text-primary)]">
+                                {candidate.candidate_id} · {candidate.title}
+                              </div>
+                              <div className="mt-1 text-[color:var(--text-muted)]">
+                                标签：{candidate.tags.join("、") || "无"} · 简介：
+                                {candidate.synopsis || "无"}
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     </div>
-                    <div className="mt-3 space-y-2">
-                      {preview.outboundPreview.state.candidates
-                        .filter((candidate) => candidate.title)
-                        .map((candidate) => (
-                          <div
-                            key={candidate.candidate_id}
-                            className="rounded-[6px] bg-[color:var(--bg-surface-hover)] px-2.5 py-2"
-                          >
-                            <div className="font-medium text-[color:var(--text-primary)]">
-                              {candidate.candidate_id} · {candidate.title}
-                            </div>
-                            <div className="mt-1 text-[color:var(--text-muted)]">
-                              标签：{candidate.tags.join("、") || "无"} · 简介：
-                              {candidate.synopsis || "无"}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                </details>
+                  </details>
+                )}
               </section>
             )}
           </div>

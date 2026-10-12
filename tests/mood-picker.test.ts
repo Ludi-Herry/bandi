@@ -266,7 +266,12 @@ test("mood picker UI appears in both libraries and only Electron can call Jev", 
   assert.match(dialogSource, /本地可播/);
   assert.match(dialogSource, /我的追番/);
   assert.match(dialogSource, /番剧 \/ 影视库/);
-  assert.match(dialogSource, /当前步骤不会调用 Jev/);
+  assert.match(dialogSource, /只在本机筛选，不联网/);
+  // without a saved key the local picks stand alone; every Jev control is gated on it
+  assert.match(dialogSource, /const jevEnabled = jevConnection\?\.configured === true;/);
+  assert.match(dialogSource, /\{jevEnabled && \(\s*<div[^]*?开始 Jev 判断/);
+  assert.match(dialogSource, /\{jevEnabled && \(\s*<details[^]*?查看未来会发送什么/);
+  assert.doesNotMatch(dialogSource, /Jev 应返回资料不足/);
   assert.match(dialogSource, /尚未发送给 Jev/);
   assert.match(dialogSource, /开始 Jev 判断/);
   assert.match(dialogSource, /当前外发授权仅覆盖“本地可播”候选/);
