@@ -6,14 +6,14 @@ This is the canonical Bandi repository for the Windows Electron product and macO
 
 - Repository: https://github.com/Ludi-Herry/bandi
 - Visibility: public
-- Latest GitHub release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12
-- Latest release title: `Bandi v0.1.12`
-- Latest release source commit: `55d60e8177a8cb7239853de27ebda672b32f5d87`
-- Release candidate version: `0.1.14`
-- Local installer: `release/Bandi-Setup-0.1.12-x64.exe`
-- Local portable build: `release/Bandi-0.1.12-x64-portable.exe`
-- Latest release installer asset: `Bandi-Setup-0.1.12-x64.exe`
-- Latest release portable asset: `Bandi-0.1.12-x64-portable.exe`
+- Latest GitHub release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.14
+- Latest release title: `Bandi v0.1.14`
+- Latest release source commit: `d26277721149ff5d3aa3e343229cb59ffc92255f`
+- Release candidate version: none
+- Local installer: `release/Bandi-Setup-0.1.14-x64.exe`
+- Local portable build: `release/Bandi-0.1.14-x64-portable.exe`
+- Latest release installer asset: `Bandi-Setup-0.1.14-x64.exe`
+- Latest release portable asset: `Bandi-0.1.14-x64-portable.exe`
 
 `electron-builder` 在本地 `release/` 目录直接生成最终 ASCII 附件名，避免托管平台净化文件名后与校验清单不一致。
 
@@ -169,6 +169,18 @@ GitHub 公共标准 runner 固定为 `windows-2025`、Intel `macos-15-intel` 与
 - 每个失败假设只跑一次完整长耗时任务。失败后先检查阶段标记、runner artifact、进程树、known folder 和结果文件；没有新诊断就停止重跑。当前实测量级为本地 `desktop:dist` 约 14 分钟、Intel macOS 构建约 12 分钟、portable N-1 runner 约 20 分钟，任何串行重跑都要先说明它能新增哪条证据。
 - 验收脚本必须给下载、退出、安装、重启和健康检查各自设置超时，并在失败时保留脱敏诊断。总 job 超时只负责兜底，不能代替阶段级退出条件。
 - 发现真实产品缺口后，允许以“已通过 lane + 已定位失败 lane + 已发布修复 + 明确的未来触发条件”结束本轮。下一轮从已记录的公开基线继续，不回放整段发布历史。
+
+### v0.1.14 Release Record
+
+- Published: `2026-10-12`
+- Release: https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.14
+- Source commit: `d26277721149ff5d3aa3e343229cb59ffc92255f`
+- Draft workflow: `38233415309`；源码门禁、Windows x64、macOS x64、macOS arm64 与 Draft 聚合 5 个作业全部通过，13 个附件；公开后 Release ID `410474960`、`releases/latest` 指向 v0.1.14，公开附件 digest 与 `SHA256SUMS.txt` 反查 `0` 个差异，Setup 公开下载链接返回 200
+- Tests: `519` total，`518` passed，`1` platform-expected skip；TypeScript、本地 Windows `desktop:dist`、包内容审计（无数据库、环境文件、日志、torrent、Cookie、qBit profile 与个人用户名路径）通过；本地包 standalone 清单含构建目录名，公开附件由 runner 构建
+- Keyless check: 0.1.14 本地包配合去掉 Jev Key 的隔离配置打开“按心情选片”，本机挑出 8 部候选，对话框不出现 Jev 控件；临时配置已移入回收站
+- Skipped version: `v0.1.13` 只生成过 Draft（run `38224488952`），因无 Key 体验需要修改而被 0.1.14 取代；Draft 已删除，tag 保留
+- N-1 acceptance: `v0.1.12 → v0.1.14` 自动更新未重新验收；README 继续提示应用内更新未完成时从 Release 手动运行
+- macOS: x64/arm64 均未签名、未公证，当前显示“下载新版”并手动安装
 
 ### v0.1.12 Release Record
 

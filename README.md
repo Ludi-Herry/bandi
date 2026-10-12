@@ -36,6 +36,7 @@
 - **下载服务开箱即用**：内置 qBittorrent，自动选端口、生成凭据、健康检查；默认上传限速 128 KiB/s，下载完暂停做种。
 - **内置播放器**：秒级续播、外挂字幕、倍速、全屏、一键截图，看完倒计时进入下一集。
 - **评分笔记和观看统计**：按整部番打分记笔记，年度统计追踪时长与集数；社区口碑卡同时显示 Bangumi、MAL、AniList 和豆瓣评分。
+- **按心情选片**：写一句“想看点轻松治愈的”，Jev 读懂这句话，把片库里的作品按符不符合你的心情分组。完整功能需要你自己的 TypeSafe API Key（目前仅 Windows）；没有 Key 时也能在本机按标签和简介先挑 8 部。
 - **本地片库也能管**：动漫和影视分区扫描本地目录，海报与资料从 Bangumi、TMDB、豆瓣自动补齐。
 - **季度番表一站看完**：长门番堂提供可直连的档期与播出情报，Bangumi 补充详情、人物、制作和评分，详情页保留两者外链。
 - **深色玻璃质感**：卡片光效跟着鼠标走，封面点开一镜到底展开成详情页，六套主题色，番剧页面颜色跟随封面。
@@ -122,6 +123,14 @@ Windows 10/11 桌面版，macOS 13+ 本地 Web 版（Intel 与 Apple Silicon）�
 - 影视区可以继续补充 TMDB、豆瓣等资料，并支持电影、电视剧与题材筛选。
 - 豆瓣 `type: tv` 会结合详情类型再次判断，电视动画不会被误放进真人影视区。
 
+### 不知道看什么：按心情选片
+
+动漫本地库和影视区页面顶部都有“按心情选片”按钮。写下此刻想看的感觉，比如“吃饭时看，容易跟上”或“悬疑推理，但不要猎奇”，再选候选来源和范围。
+
+- **完整功能（需要 Jev Key）**：在设置中心填写自己的 TypeSafe API Key 后，点击“开始 Jev 判断”，Jev 会把候选分成符合偏好、可能符合、不符合和资料不足四组。目前仅 Windows 桌面版支持。
+- **没有 Key 时**：Bandi 在本机按标签和简介挑出最贴近的 8 部，每部都能点进详情页，全程不联网。
+- **会发送什么**：只有点击“开始 Jev 判断”时，才会把本次偏好和候选作品的标题、简介、标签发给 Jev；文件路径、观看进度、下载记录、个人评分与笔记都留在本机。Key 由 Windows 系统加密保存，界面、日志和仓库都不保存明文。
+
 ### 在应用里看，也保留系统播放器
 
 内置播放器支持：
@@ -147,14 +156,14 @@ Windows 10/11 桌面版，macOS 13+ 本地 Web 版（Intel 与 Apple Silicon）�
 
 ### 选择分发包
 
-当前公开版本是 [`v0.1.12`](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12)：
+当前公开版本是 [`v0.1.14`](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.14)：
 
 | 文件 | 适合谁 | 使用方式 |
 |---|---|---|
-| `Bandi-Setup-0.1.12-x64.exe` | 日常长期使用 | 可选择安装目录，并创建桌面与开始菜单快捷方式 |
-| `Bandi-0.1.12-x64-portable.exe` | 临时体验或移动硬盘 | 直接运行；首次自解压可能需要等待一会儿 |
-| `Bandi-Local-Web-0.1.12-macOS-x64.dmg` | Intel Mac | 安装后由菜单栏启动本地服务，并在默认浏览器打开 |
-| `Bandi-Local-Web-0.1.12-macOS-arm64.dmg` | Apple Silicon Mac | 安装后由菜单栏启动本地服务，并在默认浏览器打开 |
+| `Bandi-Setup-0.1.14-x64.exe` | 日常长期使用 | 可选择安装目录，并创建桌面与开始菜单快捷方式 |
+| `Bandi-0.1.14-x64-portable.exe` | 临时体验或移动硬盘 | 直接运行；首次自解压可能需要等待一会儿 |
+| `Bandi-Local-Web-0.1.14-macOS-x64.dmg` | Intel Mac | 安装后由菜单栏启动本地服务，并在默认浏览器打开 |
+| `Bandi-Local-Web-0.1.14-macOS-arm64.dmg` | Apple Silicon Mac | 安装后由菜单栏启动本地服务，并在默认浏览器打开 |
 
 当前安装包尚未进行 Authenticode 代码签名，Windows SmartScreen 可能显示未知发布者。请只从本仓库 Releases 下载，并对照 Release 中公布的 SHA-256 校验值。
 
@@ -164,7 +173,7 @@ Windows 10/11 桌面版，macOS 13+ 本地 Web 版（Intel 与 Apple Silicon）�
 
 所有版本先生成 Draft Release。GitHub Actions 负责构建和校验平台附件；Draft 只供维护者核对架构、文件大小、SHA-256 与更新清单，客户端看不到，人工验收通过后才单独公开。
 
-`v0.1.11 → v0.1.12` 的 Setup N-1 runner 保持旧版进程与 parent lease 健康、配置未改动，但受信任页面始终没有就绪，因此本版自动 Setup 更新仍未完成验证。portable 已完成新版下载与校验、三页全局提示、60 秒就绪保持和旧进程退出，随后没有生成新版 lease、目标进程或 helper 结果，自动启动链路失败。若应用内更新没有完成，请从 [`v0.1.12` Release](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12) 手动运行对应的 Setup 或 `Bandi-0.1.12-x64-portable.exe`。
+上一轮 `v0.1.11 → v0.1.12` 的 Setup N-1 runner 保持旧版进程与 parent lease 健康、配置未改动，但受信任页面始终没有就绪，因此自动 Setup 更新仍未完成验证，`v0.1.12 → v0.1.14` 也尚未重新验收。portable 已完成新版下载与校验、三页全局提示、60 秒就绪保持和旧进程退出，随后没有生成新版 lease、目标进程或 helper 结果，自动启动链路失败。若应用内更新没有完成，请从 [`v0.1.14` Release](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.14) 手动运行对应的 Setup 或 `Bandi-0.1.14-x64-portable.exe`。
 
 | 当前入口 | 发现新版后的体验 |
 |---|---|
@@ -291,7 +300,7 @@ iPhone 与 iPad 只读取 Mac 通过当前局域网提供的页面和视频流�
 
 ### 如何更新 Bandi？
 
-Windows Setup 与 portable 会在后台检查公开 Release。下载完成后，所有页面右下角都会出现对应更新按钮，不必进入设置中心。若应用内更新没有完成，请从 [`v0.1.12` Release](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.12) 手动运行对应的 Setup 或 `Bandi-0.1.12-x64-portable.exe`。macOS 当前点击“下载新版”进入 Release 手动安装；iPhone 与 iPad 跟随 Mac 宿主版本，宿主更新后刷新 Safari 页面即可。Draft Release 不会触发客户端更新。
+Windows Setup 与 portable 会在后台检查公开 Release。下载完成后，所有页面右下角都会出现对应更新按钮，不必进入设置中心。若应用内更新没有完成，请从 [`v0.1.14` Release](https://github.com/Ludi-Herry/bandi/releases/tag/v0.1.14) 手动运行对应的 Setup 或 `Bandi-0.1.14-x64-portable.exe`。macOS 当前点击“下载新版”进入 Release 手动安装；iPhone 与 iPad 跟随 Mac 宿主版本，宿主更新后刷新 Safari 页面即可。Draft Release 不会触发客户端更新。
 
 ### 所有视频都能在内置播放器播放吗？
 
@@ -304,6 +313,10 @@ Windows x64 继续使用桌面版。macOS 13+ 使用 Bandi Local Web，Intel x64
 ### 为什么安装包体积较大？
 
 分发包包含 Electron、Node.js 与 qBittorrent，换来离线可启动的本地服务和零配置下载体验。
+
+### 没有 Jev Key 能用按心情选片吗？
+
+能用，但只是本机初筛：Bandi 按标签和简介挑出 8 部候选。让 Jev 读懂你的描述并分组，需要在设置中心填写自己的 TypeSafe API Key，目前仅 Windows 桌面版支持。
 
 ### TMDB Token 在哪里填写？
 

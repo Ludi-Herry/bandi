@@ -7,6 +7,7 @@
 - `public/brand/`、`desktop/assets/` 与浏览器图标包含追番中心的应用标识；macOS Local Web 安装包从 `public/brand/app-logo.png` 生成应用图标与菜单栏图标。
 - `public/media/login-scene-*.mp4` 是登录页使用的抽象视觉背景，不包含人物或用户媒体。
 - `docs/screenshots/` 是使用合成数据制作的产品截图，用于介绍和说明界面。
+- `docs/media/bandi-promo.mp4` 与 `docs/media/bandi-promo-poster.jpg` 是 README 展示用的 30 秒宣传片与封面。片中的应用界面来自真实录屏，画面里出现的番剧封面、剧照和片名归各自权利人所有，不属于 GPL 授权范围，仅用于说明应用功能；配乐与音效由 ElevenLabs 生成。再使用时请分别遵守对应权利人与生成服务的条款。
 - `public/qbit-guide/` 是外部 qBittorrent 兼容模式的说明截图；qBittorrent 名称、界面与商标归对应权利人所有。
 - 公开分发包不含 `vendor/ffmpeg/`。该目录只会出现在文件名带 `LOCAL-ONLY-DO-NOT-RELEASE` 的个人本地测试包中，保存精确锁定的 `ffmpeg-static` v5.3.0 当前平台二进制、binary-specific 许可与构建说明；它不属于 Bandi 原创资产，也不得公开再分发。
 
