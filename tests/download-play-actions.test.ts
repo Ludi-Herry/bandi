@@ -134,9 +134,10 @@ test("home hero candidates do not admit stale same-year airing rows", () => {
   const homeSource = readFileSync("src/app/(main)/page.tsx", "utf8");
   const heroSource = readFileSync("src/components/features/HomeHero.tsx", "utf8");
 
-  assert.match(helperSource, /isCurrentSeasonTrackedAnime/);
-  assert.match(helperSource, /tagsMatchCurrentSeason/);
-  assert.match(helperSource, /episodesMatchCurrentSeason/);
+  assert.match(helperSource, /isHomeHeroTrackedAnime/);
+  assert.match(helperSource, /tagsMatchSeason/);
+  assert.match(helperSource, /episodesMatchSeason/);
+  assert.match(helperSource, /shiftSeason\(season, -1\)/);
   assert.match(helperSource, /limit\?: number/);
   assert.match(helperSource, /Number\.isFinite\(limit\)/);
   assert.match(homeSource, /getHeroCandidates\(user\.id\)/);

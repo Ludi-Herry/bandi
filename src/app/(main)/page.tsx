@@ -9,6 +9,7 @@ import {
   getLibraryStats,
   getMissedUpdates,
   getUpcomingEpisodes,
+  isHomeLibraryEmpty,
 } from "@/lib/db-helpers/library";
 import {
   getSeasonalBrowse,
@@ -49,13 +50,18 @@ export default async function HomePage() {
   const heroItems = getHeroCandidates(user.id);
   const todayUpdatesRaw = getTodayUpdates(user.id);
   const continueItems = getContinueWatching(user.id, 4);
-  const watchingCount = getLibraryStats(user.id).watching;
+  const libraryStats = getLibraryStats(user.id);
+  const watchingCount = libraryStats.watching;
   const missedItems = getMissedUpdates(user.id, 4);
   // 始终拿两份：客户端用来切换视图，不再以"今日为空"作分支
   const upcomingItemsRaw = getUpcomingEpisodes(user.id, 7);
 
-  // 空库状态
-  if (heroItems.length === 0 && continueItems.length === 0) {
+  // 空库状态：只看追番库是否还有在看 / 想看 / 搁置条目，换季后 Hero 为空不算空库
+  if (
+    heroItems.length === 0 &&
+    continueItems.length === 0 &&
+    isHomeLibraryEmpty(libraryStats)
+  ) {
     return (
       <HomeShell>
         <EmptyHome username={user.username} />

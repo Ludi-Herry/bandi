@@ -25,7 +25,7 @@ import {
 } from "@/lib/download-cleanup";
 import { dedupeEpisodesByNumber } from "@/lib/episode-normalize";
 import { getLocalLibraryAnimeIds } from "@/lib/cinema-import";
-import { currentSeason, type BgmSeason } from "@/lib/bangumi";
+import { currentSeason, shiftSeason, type BgmSeason } from "@/lib/bangumi";
 import {
   getCompletionEpisodeNumber,
   getWatchedThroughEpisodeNumber,
@@ -702,10 +702,24 @@ export interface HeroCandidate extends LibraryItem {
   nextAiringAt: Date | null;
 }
 
-/** For the hero carousel — current-season tracked titles, even when caught up. */
+/**
+ * 首页「空库」判定：只有没有任何在看 / 想看 / 搁置条目时才算空。
+ * 换季后 Hero 可能暂时没有本季条目，但用户仍有未完成追番时首页不能显示空库。
+ */
+export function isHomeLibraryEmpty(
+  stats: Pick<ReturnType<typeof getLibraryStats>, "watching" | "planning" | "onhold">,
+) {
+  return stats.watching + stats.planning + stats.onhold === 0;
+}
+
+/**
+ * For the hero carousel — current-season tracked titles, even when caught up,
+ * plus previous-season titles still in progress right after a season rollover.
+ */
 export function getHeroCandidates(
   userId: string,
   limit?: number,
+  nowDate: Date = new Date(),
 ): HeroCandidate[] {
   const tracked = getLibrary(userId).filter(
     (it) =>
@@ -732,7 +746,12 @@ export function getHeroCandidates(
     downloadedEpisodeIds,
   );
   const lib = tracked.filter((it) =>
-    isCurrentSeasonTrackedAnime(it.anime, episodesByAnime.get(it.anime.id) ?? []),
+    isHomeHeroTrackedAnime(
+      it.anime,
+      it.userAnime,
+      episodesByAnime.get(it.anime.id) ?? [],
+      nowDate,
+    ),
   );
   if (lib.length === 0) return [];
 
@@ -755,7 +774,7 @@ export function getHeroCandidates(
     latestProgressByAnime.set(progress.animeId, progress);
   }
 
-  const now = Date.now();
+  const now = nowDate.getTime();
   const candidates = lib
     .map((it) => {
       const animeEpisodes = episodesByAnime.get(it.anime.id) ?? [];
@@ -831,21 +850,57 @@ const LOCAL_SEASON_BY_BGM_SEASON: Record<
   FALL: "fall",
 };
 
-function isCurrentSeasonTrackedAnime(a: Anime, animeEpisodes: ProgressEpisode[]) {
+/** 上一季条目在换季后仍算「当前」的近期放送窗口。 */
+const CARRYOVER_RECENT_AIRED_MS = 28 * 24 * 60 * 60 * 1000;
+
+function isHomeHeroTrackedAnime(
+  a: Anime,
+  ua: UserAnime,
+  animeEpisodes: ProgressEpisode[],
+  now: Date,
+) {
   if (a.status === "completed") return false;
 
-  const season = currentSeason();
-  const localSeason = LOCAL_SEASON_BY_BGM_SEASON[season.season];
-  if (a.year === season.year && a.season === localSeason) return true;
-  if (tagsMatchCurrentSeason(a.tags, season.season, season.year)) return true;
-  if (episodesMatchCurrentSeason(animeEpisodes, season.season, season.year)) {
+  const season = currentSeason(now);
+  if (animeMatchesSeason(a, animeEpisodes, season.season, season.year)) {
     return true;
   }
 
-  return false;
+  // 换季延续：上一季条目在近期仍有放送 / 待播集，或用户还没看到完结集。
+  if (ua.watchStatus === "completed") return false;
+  const previous = shiftSeason(season, -1);
+  if (!animeMatchesSeason(a, animeEpisodes, previous.season, previous.year)) {
+    return false;
+  }
+
+  const nowMs = now.getTime();
+  const hasRecentOrUpcomingEpisode = animeEpisodes.some((episode) => {
+    const time = episode.airedAt?.getTime();
+    return time != null && time >= nowMs - CARRYOVER_RECENT_AIRED_MS;
+  });
+  if (hasRecentOrUpcomingEpisode) return true;
+
+  const completionEpisode = getCompletionEpisodeNumber({
+    totalEpisodes: a.totalEpisodes,
+    episodeNumbers: animeEpisodes.map((episode) => episode.number),
+  });
+  return completionEpisode != null && ua.currentEpisode < completionEpisode;
 }
 
-function tagsMatchCurrentSeason(
+function animeMatchesSeason(
+  a: Anime,
+  animeEpisodes: ProgressEpisode[],
+  season: BgmSeason,
+  year: number,
+) {
+  if (a.year === year && a.season === LOCAL_SEASON_BY_BGM_SEASON[season]) {
+    return true;
+  }
+  if (tagsMatchSeason(a.tags, season, year)) return true;
+  return episodesMatchSeason(animeEpisodes, season, year);
+}
+
+function tagsMatchSeason(
   tags: string[] | null | undefined,
   season: BgmSeason,
   year: number,
@@ -874,7 +929,7 @@ const SEASON_START_MONTH_INDEX: Record<BgmSeason, number> = {
   FALL: 9,
 };
 
-function episodesMatchCurrentSeason(
+function episodesMatchSeason(
   animeEpisodes: ProgressEpisode[],
   season: BgmSeason,
   year: number,
