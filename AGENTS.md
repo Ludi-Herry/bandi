@@ -163,6 +163,7 @@ bandi/
 - 3D 元素性能预算：60fps，粒子数 < 200
 - 低配设备降级：`prefers-reduced-motion` + GPU 检测 → CSS fallback
 - 不预埋多语言、多租户、插件系统
+- 社媒宣传稿件与营销素材只留在本机，不进入仓库；`.gitignore` 已排除 `/xhs-*.md` 等本地产物。例外：README 展示用的宣传片成片与封面放 `docs/media/`（压缩到 10 MB 左右），视频工程 `promo-video/` 仍只留本机
 
 ## 命令
 

@@ -87,6 +87,9 @@ next-env.d.ts
 /garden-gpt-image-2/
 /social-card-opus-gpt-orbit-bug/
 /小红书文章素材/
+/xhs-*.md
+/docs/design/ai-usage-dashboard.html
+/docs/design/assets/
 
 # drizzle
 /drizzle/meta/
