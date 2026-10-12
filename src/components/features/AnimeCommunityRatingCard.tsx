@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { ExternalLink, Star } from "lucide-react";
 import { GlassPanel } from "@/components/ui";
 import type { AnimeCommunityRatings } from "@/lib/anime-community-ratings";
@@ -150,10 +150,20 @@ function RatingSourceRow({
         <span className="text-[13px] font-semibold text-[color:var(--text-primary)]">
           {label}
         </span>
-        <p className="mt-1 truncate text-[11px] text-[color:var(--text-secondary)]">
-          {detail || "评分人数未提供"}
-          {updatedAt && ` · 更新于 ${updatedAt}`}
+        {/* 右栏只有约 110px 文字宽：评分人数与全站排名允许换行，不再被省略号截掉；更新时间单独一行 */}
+        <p className="mt-1 text-[11px] leading-4 text-[color:var(--text-secondary)]">
+          {(detail || "评分人数未提供").split(" · ").map((part, index) => (
+            <Fragment key={part}>
+              {index > 0 && " · "}
+              <span className="whitespace-nowrap">{part}</span>
+            </Fragment>
+          ))}
         </p>
+        {updatedAt && (
+          <p className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
+            更新于 {updatedAt}
+          </p>
+        )}
       </div>
       <span className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
         <span

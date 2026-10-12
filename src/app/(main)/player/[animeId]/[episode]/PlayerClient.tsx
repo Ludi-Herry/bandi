@@ -1021,7 +1021,7 @@ export function PlayerClient({
       </div>
 
       <div className="desktop-player-stage relative mx-auto flex min-h-[calc(100vh-104px)] max-w-[1180px] items-center">
-        <div className="w-full overflow-hidden rounded-[12px] border border-[rgb(var(--accent-rgb)/0.24)] bg-[color:var(--bg-elevated)] shadow-[0_24px_72px_rgba(0,0,0,0.52)]">
+        <div className="desktop-player-card w-full overflow-hidden rounded-[12px] border border-[rgb(var(--accent-rgb)/0.24)] bg-[color:var(--bg-elevated)] shadow-[0_24px_72px_rgba(0,0,0,0.52)]">
           <header className="flex items-center justify-between gap-4 border-b border-white/5 bg-[rgba(18,19,22,0.94)] px-5 py-4">
             <div className="flex min-w-0 items-center gap-3">
               <span className="player-live-dot h-2.5 w-2.5 shrink-0 rounded-full bg-[color:var(--accent)] shadow-[0_0_14px_rgb(var(--accent-rgb)/0.5)]" />

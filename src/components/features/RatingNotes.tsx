@@ -110,7 +110,7 @@ export function RatingNotes({
   };
 
   return (
-    <div className={cn("relative overflow-hidden", disabled && "opacity-60")}>
+    <div className={cn("@container relative overflow-hidden", disabled && "opacity-60")}>
       <div className="pointer-events-none absolute right-0 top-0 h-28 w-28 rounded-full bg-[color:var(--accent-subtle)] blur-3xl" />
 
       <div className="relative flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--border-subtle)] pb-3">
@@ -122,13 +122,14 @@ export function RatingNotes({
         </span>
       </div>
 
-      <div className="relative mt-4 flex flex-col gap-3 min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between min-[460px]:gap-4">
+      {/* 按卡片自身宽度换行：详情页右栏只有约 240px，五颗星必须保持一行，分数另起一行 */}
+      <div className="relative mt-4 flex flex-col gap-3 @min-[300px]:flex-row @min-[300px]:items-center @min-[300px]:justify-between @min-[300px]:gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <span className="shrink-0 text-[13px] text-[color:var(--text-secondary)]">
             我的评分:
           </span>
           <div
-            className="flex min-w-0 flex-wrap items-center gap-1"
+            className="flex min-w-0 flex-nowrap items-center gap-1"
             onMouseLeave={() => setHoverRating(0)}
           >
             {[1, 2, 3, 4, 5].map((n) => {
@@ -230,7 +231,7 @@ export function RatingNotes({
         )}
       />
 
-      <div className="relative mt-4 flex flex-col gap-3 min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between">
+      <div className="relative mt-4 flex flex-col gap-3 @min-[300px]:flex-row @min-[300px]:items-center @min-[300px]:justify-between">
         <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--accent)]" />
           <TextSwap value={saveStateText} className="truncate" shimmer={saving} />
@@ -245,7 +246,7 @@ export function RatingNotes({
             "text-[12px] font-semibold transition-[filter,opacity,transform]",
             "hover:brightness-110 active:scale-[0.98]",
             "disabled:cursor-not-allowed disabled:opacity-60",
-            "max-[459px]:w-full",
+            "w-full @min-[300px]:w-auto",
           )}
         >
           {saving ? (

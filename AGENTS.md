@@ -261,6 +261,7 @@ npm run db:seed  # 填充测试数据
 - 占用 `w-14` 状态消息位放在控件**前面**而非后面，避免视觉上控件没贴右
 - 卡片 orbit ring 的 `.anime-card-glow` 宿主放在非链接元素上，当前基准是 `article`；整卡点击用内部绝对定位 overlay link。Chrome 在链接元素或链接子树的 pseudo-element 上会让 `conic-gradient(from var(--glow-angle))` 丢失运行时角度，表现为绕圈卡住。
 - Tailwind CSS 4 的 `translate-*` / `scale-*` 会写入独立 transform 属性；hover 位移要让 `transition-property` 覆盖 `translate`，或直接使用 `transform: translateY(...)`。只写 `transition-[opacity,transform]` 会让位移动画硬切。
+- 卡片 ⇄ 详情封面一镜到底（`src/lib/library-detail-transition.ts`）：跨文档 View Transition 在动画帧回调之前截取新页面，而 React 19 把已到达的流式 Suspense 内容排进 `$RB`、下一帧才揭示，真实 Hero 赶不上截图。`pagereveal` 时先 `$RV($RB)` 揭示，再给真实元素命名；替身封面只做兜底。不要把共享名交接推迟到 rAF 之后，那会截断形变变成跳切。
 - 首页“本季新番”按星期分组，每组是横向轨道：首屏 6 张，超过 6 张通过左右箭头或触控板横滑浏览全部条目。
 - 通知菜单包含下载列表状态：`下载完成`、`下载失败`、`下载连接中断` 会计入未读，`下载中` / `等待下载` 作为被动状态展示；同一部番同时满足漏看和今日更新时，漏看提醒优先。
 - 桌面窗口栏使用小型 Bandi 标识；下方主导航不重复 `BrandLogo`，左侧固定放 `SpaceSwitcher`。≥1100px 时页面导航独立锚定 `--app-page-gutter`，与下方内容左边界对齐；窄屏保留空间切换并把页面导航收进“更多”，低于 360px 时空间切换只显示图标。网页登录页继续使用 `BrandLogo`；桌面模式由 `DesktopSessionGate` 静默建立本机会话，不显示用户名、密码、注册或退出登录入口。

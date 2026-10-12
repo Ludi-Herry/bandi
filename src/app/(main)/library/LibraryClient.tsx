@@ -221,13 +221,14 @@ export function LibraryClient({ items, initialContext }: LibraryClientProps) {
 
   return (
     <>
-      {/* tab + filter bar */}
-      <div className="mb-5 flex flex-col gap-3 min-[900px]:flex-row min-[900px]:flex-wrap min-[900px]:items-start xl:flex-nowrap">
+      {/* tab + filter bar：按内容列宽度（容器查询）决定并排，侧栏占位时不再被挤成多行 */}
+      <div className="@container mb-5">
+      <div className="flex flex-col gap-3 @min-[900px]:flex-row @min-[900px]:items-start">
         <div
           ref={statusTabsRef}
           role="tablist"
           aria-label="追番状态"
-          className="t-tabs t-tabs-segmented flex w-full max-w-full flex-wrap items-center gap-1 overflow-visible rounded-[8px] border border-[color:var(--border-subtle)] p-1 min-[560px]:w-fit min-[900px]:shrink-0"
+          className="t-tabs t-tabs-segmented flex w-full max-w-full flex-wrap items-center gap-1 overflow-visible rounded-[8px] border border-[color:var(--border-subtle)] p-1 min-[560px]:w-fit @min-[900px]:shrink-0"
         >
           <span className="t-tabs-pill" aria-hidden="true" />
           {STATUS_TABS.map((t) => {
@@ -262,7 +263,7 @@ export function LibraryClient({ items, initialContext }: LibraryClientProps) {
           })}
         </div>
 
-        <div className="grid w-full min-w-0 grid-cols-2 gap-2 min-[640px]:flex min-[640px]:flex-wrap min-[640px]:items-center min-[900px]:justify-start xl:ml-auto xl:w-auto xl:justify-end">
+        <div className="grid w-full min-w-0 grid-cols-2 gap-2 min-[640px]:flex min-[640px]:flex-wrap min-[640px]:items-center min-[640px]:justify-start @min-[900px]:ml-auto @min-[900px]:w-auto @min-[900px]:flex-nowrap @min-[900px]:justify-end">
           <SelectInline
             value={typeFilter}
             onChange={setTypeFilter}
@@ -328,6 +329,7 @@ export function LibraryClient({ items, initialContext }: LibraryClientProps) {
             {selectMode ? "退出" : "选择"}
           </button>
         </div>
+      </div>
       </div>
 
       {filtered.length === 0 ? (

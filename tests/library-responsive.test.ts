@@ -38,21 +38,33 @@ test("library controls remain usable on phone widths", () => {
 });
 
 test("library status tabs stay fully visible on medium desktop widths", () => {
-  assert.match(libraryClientSource, /min-\[900px\]:flex-wrap/);
-  assert.match(libraryClientSource, /xl:flex-nowrap/);
-  assert.match(libraryClientSource, /min-\[900px\]:items-start/);
+  // 并排与否看内容列宽度，不看窗口宽度：1280 窗口带左侧统计栏时内容列只有约 666px。
+  assert.match(libraryClientSource, /@container mb-5/);
+  assert.match(libraryClientSource, /@min-\[900px\]:flex-row @min-\[900px\]:items-start/);
   assert.match(libraryClientSource, /overflow-visible/);
-  assert.match(libraryClientSource, /min-\[900px\]:shrink-0/);
+  assert.match(libraryClientSource, /@min-\[900px\]:shrink-0/);
+  assert.doesNotMatch(libraryClientSource, /xl:flex-nowrap/);
 });
 
-test("library wrapped toolbar rows share the same left edge before xl", () => {
-  assert.match(libraryClientSource, /min-\[900px\]:justify-start/);
-  assert.match(libraryClientSource, /xl:ml-auto/);
-  assert.match(libraryClientSource, /xl:w-auto/);
-  assert.match(libraryClientSource, /xl:justify-end/);
-  assert.doesNotMatch(libraryClientSource, /min-\[900px\]:ml-auto/);
-  assert.doesNotMatch(libraryClientSource, /min-\[900px\]:w-auto/);
-  assert.doesNotMatch(libraryClientSource, /min-\[900px\]:justify-end/);
+test("library wrapped toolbar rows share the same left edge until the column fits one row", () => {
+  assert.match(libraryClientSource, /min-\[640px\]:justify-start/);
+  assert.match(libraryClientSource, /@min-\[900px\]:ml-auto/);
+  assert.match(libraryClientSource, /@min-\[900px\]:w-auto/);
+  assert.match(libraryClientSource, /@min-\[900px\]:flex-nowrap/);
+  assert.match(libraryClientSource, /@min-\[900px\]:justify-end/);
+  assert.doesNotMatch(libraryClientSource, /xl:ml-auto/);
+  assert.doesNotMatch(libraryClientSource, /\smin-\[900px\]:ml-auto/);
+});
+
+test("detail rating stars stay on one row inside the narrow side column", () => {
+  const ratingNotesSource = readFileSync(
+    "src/components/features/RatingNotes.tsx",
+    "utf8",
+  );
+  assert.match(ratingNotesSource, /@container relative overflow-hidden/);
+  assert.match(ratingNotesSource, /@min-\[300px\]:flex-row/);
+  assert.match(ratingNotesSource, /flex min-w-0 flex-nowrap items-center gap-1/);
+  assert.doesNotMatch(ratingNotesSource, /min-\[460px\]:flex-row/);
 });
 
 test("library list rows and bulk actions can wrap without page overflow", () => {

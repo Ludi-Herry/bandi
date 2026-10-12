@@ -409,6 +409,19 @@ html[data-desktop-app="true"] .desktop-player-stage {
   min-height: calc(100vh - var(--desktop-titlebar-shell-height) - 104px);
 }
 
+/* 播放卡按窗口高度限宽：16:9 画面 + 约 70px 标题栏必须落在首屏内，
+   1280×820 默认窗口下进入播放页不再需要下滚才能看到控制条。 */
+.desktop-player-card {
+  max-width: calc((100vh - 104px - 70px) * 16 / 9);
+  margin-inline: auto;
+}
+
+html[data-desktop-app="true"] .desktop-player-card {
+  max-width: calc(
+    (100vh - var(--desktop-titlebar-shell-height) - 104px - 70px) * 16 / 9
+  );
+}
+
 /* Electron 原生启动页与本机会话页共用同一视觉状态，避免页面交接时闪变。 */
 .desktop-boot-screen {
   position: relative;

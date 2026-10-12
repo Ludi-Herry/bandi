@@ -31,6 +31,8 @@ export const LIBRARY_RETURN_PENDING_KEY = "bandi:library:pending:v1";
 export const LIBRARY_TRANSITION_ARM_KEY = "bandi:library:arm:v1";
 export const LIBRARY_TRANSITION_DETAIL_KEY = "bandi:library:detail:v1";
 export const LIBRARY_TRANSITION_COVER_KEY = "bandi:library:cover:v1";
+/** Cover source and geometry for the stand-in that bridges streamed first paints. */
+export const LIBRARY_TRANSITION_STANDIN_KEY = "bandi:library:standin:v1";
 
 export const LIBRARY_VIEW_DEFAULTS: LibraryViewContext = {
   status: "all",
